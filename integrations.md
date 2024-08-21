@@ -1,3 +1,8 @@
+---
+excerpt: "Guide to integrating Pixashot with various programming languages through its HTTP API, including examples for Node.js, Python, Java, C#, PHP, Go, and Ruby."
+published_at: true
+---
+
 # Integrations
 
 Pixashot can be easily integrated with various programming languages through its HTTP API. Below are examples of how to use Pixashot in different languages.
@@ -12,7 +17,7 @@ const fs = require('fs');
 
 async function captureScreenshot() {
   try {
-    const response = await axios.post('https://api.pixashot.com/capture', {
+    const response = await axios.post('https://api.example.com/capture', {
       url: 'https://example.com',
       format: 'png',
       full_page: true
@@ -42,7 +47,7 @@ Using the `requests` library:
 import requests
 
 def capture_screenshot():
-    url = 'https://api.pixashot.com/capture'
+    url = 'https://api.example.com/capture'
     payload = {
         'url': 'https://example.com',
         'format': 'png',
@@ -84,7 +89,7 @@ public class PixashotClient {
         try {
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://api.pixashot.com/capture"))
+                .uri(URI.create("https://api.example.com/capture"))
                 .header("Authorization", "Bearer YOUR_API_KEY")
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(
@@ -134,7 +139,7 @@ class PixashotClient
 
             try
             {
-                var response = await client.PostAsync("https://api.pixashot.com/capture", content);
+                var response = await client.PostAsync("https://api.example.com/capture", content);
                 if (response.IsSuccessStatusCode)
                 {
                     var imageBytes = await response.Content.ReadAsByteArrayAsync();
@@ -162,7 +167,7 @@ Using `cURL`:
 ```php
 <?php
 
-$url = 'https://api.pixashot.com/capture';
+$url = 'https://api.example.com/capture';
 $data = json_encode([
     'url' => 'https://example.com',
     'format' => 'png',
@@ -211,7 +216,7 @@ import (
 )
 
 func main() {
-    url := "https://api.pixashot.com/capture"
+    url := "https://api.example.com/capture"
     data := map[string]interface{}{
         "url":       "https://example.com",
         "format":    "png",
@@ -253,7 +258,7 @@ Using the `net/http` library:
 require 'net/http'
 require 'json'
 
-uri = URI('https://api.pixashot.com/capture')
+uri = URI('https://api.example.com/capture')
 http = Net::HTTP.new(uri.host, uri.port)
 http.use_ssl = true
 

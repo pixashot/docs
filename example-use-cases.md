@@ -1,3 +1,8 @@
+---
+excerpt: "Practical examples and use cases for Pixashot, including e-commerce product captures, social media previews, web archiving, and automated testing."
+published_at: true
+---
+
 # Examples and Use Cases
 
 Pixashot is a versatile tool that can be applied to various scenarios across different industries. This section explores some common use cases and provides examples of how Pixashot can be implemented to solve specific challenges.
@@ -13,7 +18,7 @@ Pixashot can significantly enhance the product presentation in e-commerce platfo
 import requests
 
 def capture_product_image(product_url, product_id):
-    pixashot_url = "https://api.pixashot.com/capture"
+    pixashot_url = "https://api.example.com/capture"
     payload = {
         "url": product_url,
         "selector": "#product-main-image",
@@ -52,7 +57,7 @@ const axios = require('axios');
 const fs = require('fs');
 
 async function generateSocialPreview(blogUrl, title, author) {
-    const pixashotUrl = 'https://api.pixashot.com/capture';
+    const pixashotUrl = 'https://api.example.com/capture';
     const payload = {
         url: 'https://your-preview-generator.com',
         format: 'png',
@@ -103,7 +108,7 @@ import requests
 from datetime import datetime
 
 def archive_homepage(url):
-    pixashot_url = "https://api.pixashot.com/capture"
+    pixashot_url = "https://api.example.com/capture"
     payload = {
         "url": url,
         "format": "png",
@@ -145,7 +150,7 @@ const fs = require('fs');
 const { execSync } = require('child_process');
 
 async function performVisualTest(testUrl, baselineImage) {
-    const pixashotUrl = 'https://api.pixashot.com/capture';
+    const pixashotUrl = 'https://api.example.com/capture';
     const payload = {
         url: testUrl,
         format: 'png',

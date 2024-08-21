@@ -1,3 +1,8 @@
+---
+excerpt: "Security guidelines for Pixashot, covering API key management, HTTPS configuration, data privacy, and best practices for maintaining a secure deployment."
+published_at: true
+---
+
 # Security
 
 Ensuring the security of your Pixashot deployment is crucial. This section covers key aspects of security, including API key management, HTTPS configuration, data privacy, and best practices.

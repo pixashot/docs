@@ -1,3 +1,8 @@
+---
+excerpt: "Overview of Pixashot's core concepts, explaining how it works, API structure, and the request flow process."
+published_at: true
+---
+
 # Core Concepts
 
 Understanding the core concepts of Pixashot will help you make the most of its capabilities. This section covers how Pixashot works under the hood, provides an overview of the API, and explains the request flow.

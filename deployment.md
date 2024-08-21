@@ -1,3 +1,8 @@
+---
+excerpt: "Comprehensive overview of deployment options for Pixashot, including cloud platforms, self-hosted solutions, and scaling considerations."
+published_at: true
+---
+
 # Deployment
 
 Pixashot can be deployed on various cloud platforms or self-hosted environments. This section provides an overview of deployment options and links to detailed documentation for each platform.

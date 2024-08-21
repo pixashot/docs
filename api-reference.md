@@ -1,3 +1,8 @@
+---
+excerpt: "Comprehensive API reference for Pixashot, detailing endpoints, request parameters, response formats, error handling, and rate limiting."
+published_at: true
+---
+
 # API Reference
 
 This section provides a comprehensive reference for the Pixashot API, including details on endpoints, request parameters, response formats, error handling, and rate limiting.

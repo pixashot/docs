@@ -1,3 +1,8 @@
+---
+excerpt: "Detailed explanation of Pixashot's key features, including full page capture, custom viewport, element capture, PDF generation, and more."
+published_at: true
+---
+
 # Features
 
 Pixashot offers a comprehensive set of features designed to capture web content with precision and flexibility. Whether you need full-page screenshots, specific element captures, or customized viewport sizes, Pixashot has you covered.

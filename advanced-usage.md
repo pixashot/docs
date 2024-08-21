@@ -1,3 +1,8 @@
+---
+excerpt: "Advanced techniques for using Pixashot, including custom JavaScript injection, CSS manipulation, proxy configuration, and handling dynamic content."
+published_at: true
+---
+
 # Advanced Usage
 
 Pixashot offers advanced features for users who need more control over the capture process. These features allow for complex scenarios, custom manipulations, and handling of challenging web content.

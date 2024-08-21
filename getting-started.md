@@ -1,3 +1,8 @@
+---
+excerpt: "Quick start guide for Pixashot, covering installation, authentication, and basic usage of the web screenshot service API."
+published_at: true
+---
+
 # Getting Started
 
 ## Introduction
