@@ -9,7 +9,7 @@ Pixashot can be deployed on various cloud platforms or self-hosted environments.
 
 ## Google Cloud Run
 
-Google Cloud Run is an excellent option for deploying Pixashot, offering easy scaling and a generous free tier.
+Google Cloud Run is an excellent option for deploying Pixashot, offering easy scaling and a generous free tier. For a comprehensive, step-by-step guide to deploying Pixashot on Cloud Run, see our [detailed Cloud Run deployment guide](cloud-run-deployment.md).
 
 ```bash
 # Deploy to Cloud Run with optimal settings
@@ -22,6 +22,7 @@ gcloud run deploy pixashot \
   --cpu 2
 ```
 
+For more general information about Cloud Run deployment, refer to:
 - [Deploying container images on Cloud Run](https://cloud.google.com/run/docs/deploying)
 - [Setting up continuous deployment](https://cloud.google.com/run/docs/continuous-deployment)
 - [Managing secrets in Cloud Run](https://cloud.google.com/run/docs/configuring/secrets)
