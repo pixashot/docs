@@ -21,28 +21,98 @@ This endpoint accepts various parameters to customize the screenshot capture pro
 
 The `/capture` endpoint accepts the following parameters in the request body as JSON:
 
+### Basic Options
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `url` | string | Yes* | The URL of the webpage to capture. |
-| `html_content` | string | Yes* | HTML content to render and capture instead of a URL. |
-| `format` | string | No | Output format: "png" (default), "jpeg", "webp", "pdf", or "html". |
-| `full_page` | boolean | No | Capture the full scrollable page. Default is `false`. |
-| `window_width` | integer | No | Width of the browser viewport in pixels. Default is 1920. |
-| `window_height` | integer | No | Height of the browser viewport in pixels. Default is 1080. |
-| `selector` | string | No | CSS selector of a specific element to capture. |
-| `delay_capture` | integer | No | Delay in milliseconds before taking the screenshot. Default is 0. |
-| `wait_for_timeout` | integer | No | Timeout in milliseconds to wait for page load. Default is 8000. |
-| `wait_for_selector` | string | No | Wait for a specific selector to appear in DOM before capturing. |
-| `wait_for_network` | string | No | Specify whether to wait for network to be "idle" (default) or "mostly_idle". |
-| `custom_js` | string | No | Custom JavaScript to inject and execute before capturing. |
-| `image_quality` | integer | No | Image quality (0-100) for JPEG and WebP formats. Default is 90. |
-| `pixel_density` | float | No | Device scale factor (DPR) for the screenshot. Default is 1.0. |
-| `omit_background` | boolean | No | Render a transparent background. Default is `false`. |
-| `dark_mode` | boolean | No | Enable dark mode for the screenshot. Default is `false`. |
-| `block_media` | boolean | No | Block images, video, and audio from loading. Default is `false`. |
-| `geolocation` | object | No | Geolocation to spoof: `{latitude: float, longitude: float, accuracy: float}`. |
+| `url` | string (HttpUrl) | Yes* | URL of the site to take a screenshot of |
+| `html_content` | string | Yes* | HTML content to render and capture |
+| `template` | string | No | Name of the optional template to use |
 
 *Note: Either `url` or `html_content` must be provided, but not both.
+
+### Viewport and Screenshot Options
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `window_width` | integer | 1920 | Width of the browser viewport in pixels |
+| `window_height` | integer | 1080 | Height of the browser viewport in pixels |
+| `full_page` | boolean | false | Take a screenshot of the full page |
+| `selector` | string | null | CSS selector of a specific element to capture |
+
+### User Agent Options
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `use_random_user_agent` | boolean | false | Use a random user agent |
+| `user_agent_device` | string | null | Device type: "desktop" or "mobile" |
+| `user_agent_platform` | string | null | Platform: "windows", "macos", "ios", "linux", "android" |
+| `user_agent_browser` | string | "chrome" | Browser: "chrome", "edge", "firefox", "safari" |
+
+### Format and Response Options
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `format` | string | "png" | Output format: "png", "jpeg", "webp", "pdf", "html" |
+| `response_type` | string | "by_format" | Response type: "by_format", "empty", "json" |
+
+### Interaction Options
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `interactions` | array | null | List of interaction steps to perform before capturing |
+| `wait_for_animation` | boolean | false | Wait for animations to complete before capturing |
+
+### Image Options
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `image_quality` | integer (0-100) | 90 | Image quality for JPEG and WebP formats |
+| `pixel_density` | float | 1.0 | Device scale factor (DPR) |
+| `omit_background` | boolean | false | Render a transparent background |
+| `dark_mode` | boolean | false | Enable dark mode for the screenshot |
+
+### Wait and Timeout Options
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `wait_for_timeout` | integer | 8000 | Timeout in milliseconds to wait for page load |
+| `wait_for_selector` | string | null | Wait for a specific selector to appear in DOM |
+| `delay_capture` | integer | 0 | Delay in milliseconds before taking the screenshot |
+| `wait_for_network` | string | "idle" | Network wait strategy: "idle" or "mostly_idle" |
+
+### Network and Resource Options
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `custom_js` | string | null | Custom JavaScript to inject and execute |
+| `ignore_https_errors` | boolean | true | Ignore HTTPS errors during navigation |
+| `block_media` | boolean | false | Block images, video, and audio from loading |
+| `custom_headers` | object | null | Custom headers to be sent with the request |
+
+### Geolocation Options
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `geolocation` | object | null | Geolocation to spoof: `{latitude: float, longitude: float, accuracy: float}` |
+
+### PDF-specific Options
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `pdf_print_background` | boolean | true | Print background graphics in PDF |
+| `pdf_scale` | float | 1.0 | Scale of the webpage rendering |
+| `pdf_page_ranges` | string | null | Paper ranges to print, e.g., '1-5, 8, 11-13' |
+| `pdf_format` | string | "A4" | Paper format: "A4", "Letter", "Legal" |
+| `pdf_width` | string | null | Paper width, accepts values labeled with units |
+| `pdf_height` | string | null | Paper height, accepts values labeled with units |
+
+### Interaction Step Structure
+When using the `interactions` parameter, each step should have the following structure:
+
+```json
+{
+  "action": "click" | "type" | "hover" | "scroll" | "wait_for",
+  "selector": "string",  // Required for click, type, hover
+  "text": "string",      // Required for type
+  "x": "integer",        // Required for scroll
+  "y": "integer",        // Required for scroll
+  "wait_for": {          // Required for wait_for action
+    "type": "network_idle" | "network_mostly_idle" | "selector" | "timeout",
+    "value": "string" | "integer"  // String for selector, integer for others
+  }
+}
+```
 
 ### ⚠️ Environment-Controlled Features
 
@@ -56,31 +126,61 @@ Contact your Pixashot administrator to modify these settings.
 
 ### Example Request
 
+Basic screenshot:
 ```json
 {
   "url": "https://example.com",
   "format": "png",
   "full_page": true,
   "window_width": 1280,
-  "window_height": 800,
+  "window_height": 800
+}
+```
+
+Advanced screenshot with interactions:
+```json
+{
+  "url": "https://example.com",
+  "format": "png",
   "wait_for_network": "idle",
   "wait_for_timeout": 8000,
-  "custom_js": "document.body.style.backgroundColor = 'lightblue';"
+  "pixel_density": 2.0,
+  "dark_mode": true,
+  "interactions": [
+    {
+      "action": "click",
+      "selector": "#accept-cookies"
+    },
+    {
+      "action": "wait_for",
+      "wait_for": {
+        "type": "network_idle",
+        "value": 2000
+      }
+    }
+  ],
+  "custom_js": "document.body.style.backgroundColor = 'white';"
 }
 ```
 
 ## Response Format
 
-The response format depends on the `format` parameter specified in the request:
+The response format depends on the `response_type` and `format` parameters:
 
-- For image formats (png, jpeg, webp), the response will be the binary image data with the appropriate `Content-Type` header.
-- For PDF format, the response will be the binary PDF data with `Content-Type: application/pdf`.
-- For HTML format, the response will be the captured HTML content with `Content-Type: text/html`.
+- `"by_format"` (default):
+   - Image formats (png, jpeg, webp): Binary image data with appropriate MIME type
+   - PDF: Binary PDF data with `Content-Type: application/pdf`
+   - HTML: HTML content with `Content-Type: text/html`
 
-The response will include the following headers:
+- `"empty"`: Returns 204 No Content
 
-- `Content-Type`: The MIME type of the response
-- `Content-Disposition: attachment; filename=screenshot.<format>`
+- `"json"`: Returns JSON object with base64-encoded content:
+  ```json
+  {
+    "file": "base64_encoded_content",
+    "format": "png"
+  }
+  ```
 
 ## Error Handling
 
@@ -138,20 +238,24 @@ Pixashot uses a single browser context for all requests, which means:
 ## Best Practices
 
 1. **Timeouts**:
-    - Set appropriate `wait_for_timeout` values (default: 8000ms)
-    - Use `wait_for_network` strategically ("idle" or "mostly_idle")
+   - Set appropriate `wait_for_timeout` values (default: 8000ms)
+   - Use `wait_for_network` strategically ("idle" or "mostly_idle")
+   - Consider using interaction steps for complex loading scenarios
 
 2. **Resource Optimization**:
-    - Use `block_media: true` when images aren't needed
-    - Set appropriate viewport sizes to minimize memory usage
+   - Use `block_media: true` when images aren't needed
+   - Set appropriate viewport sizes to minimize memory usage
+   - Use the `selector` parameter to capture specific elements when possible
 
 3. **Error Handling**:
-    - Implement exponential backoff for retry logic
-    - Handle 429 responses properly when rate limiting is enabled
+   - Implement exponential backoff for retry logic
+   - Handle 429 responses properly when rate limiting is enabled
+   - Use appropriate timeouts for your use case
 
 4. **Security**:
-    - Keep your AUTH_TOKEN secure
-    - Validate and sanitize all URLs before sending
-    - Use HTTPS for all API requests
+   - Keep your AUTH_TOKEN secure
+   - Validate and sanitize all URLs before sending
+   - Use HTTPS for all API requests
+   - Be cautious with custom JavaScript injection
 
 Remember to handle errors gracefully and implement appropriate retry logic in your applications. For high-volume usage, contact your Pixashot administrator to discuss rate limit adjustments and resource allocation.

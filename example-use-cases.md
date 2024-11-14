@@ -1,8 +1,3 @@
----
-excerpt: "Practical examples and use cases for Pixashot, including e-commerce product captures, social media previews, web archiving, and automated testing."
-published_at: true
----
-
 # Examples and Use Cases
 
 Pixashot provides powerful screenshot capabilities that can be applied across various industries. Here are practical examples showing how to integrate Pixashot into different workflows.
@@ -27,22 +22,48 @@ def capture_product_image(product_url, product_id, retries=3):
         "format": "png",
         "window_width": 1200,
         "window_height": 800,
-        "wait_for_network": "idle",
-        "block_media": False,       # We need images for products
+        "pixel_density": 2.0,  # High quality for products
+        "wait_for_animation": True,
+        "block_media": False,  # We need product images
+        "interactions": [
+            {
+                "action": "wait_for",
+                "wait_for": {
+                    "type": "selector",
+                    "value": "#product-main-image img"
+                }
+            },
+            {
+                "action": "wait_for",
+                "wait_for": {
+                    "type": "network_idle",
+                    "value": 2000
+                }
+            },
+            {
+                "action": "hover",
+                "selector": "#product-main-image"  # Trigger any hover effects
+            }
+        ],
         "custom_js": """
             // Remove unnecessary elements
             document.querySelectorAll('.popup, .cookie-notice, .chat-widget')
                 .forEach(el => el.remove());
             
-            // Ensure product image is loaded
-            await new Promise(resolve => {
-                const img = document.querySelector('#product-main-image img');
-                if (img && img.complete) resolve();
-                else if (img) {
-                    img.onload = resolve;
-                    img.onerror = resolve;
-                } else resolve();
+            // Force high-quality images
+            document.querySelectorAll('img[srcset]').forEach(img => {
+                const sources = img.srcset.split(',');
+                const highest = sources
+                    .map(s => ({
+                        url: s.trim().split(' ')[0],
+                        width: parseInt(s.trim().split(' ')[1] || '0')
+                    }))
+                    .sort((a, b) => b.width - a.width)[0];
+                if (highest) img.src = highest.url;
             });
+            
+            // Ensure consistent background
+            document.body.style.backgroundColor = 'white';
         """
     }
     headers = {
@@ -97,21 +118,42 @@ async function generateSocialPreview(blogUrl, title, author) {
     const payload = {
         url: 'https://your-preview-generator.com',
         format: 'png',
+        template: 'social_preview',  // Use predefined template
         window_width: 1200,
         window_height: 630,
-        wait_for_network: 'idle',
         pixel_density: 2.0,  // Higher quality for social
+        wait_for_animation: true,
+        interactions: [
+            {
+                action: 'type',
+                selector: '#blog-title',
+                text: title
+            },
+            {
+                action: 'type',
+                selector: '#blog-author',
+                text: author
+            },
+            {
+                action: 'type',
+                selector: '#blog-url',
+                text: blogUrl
+            },
+            {
+                action: 'wait_for',
+                wait_for: {
+                    type: 'network_idle',
+                    value: 2000
+                }
+            }
+        ],
         custom_js: `
-            // Insert content
-            document.getElementById('blog-title').textContent = ${JSON.stringify(title)};
-            document.getElementById('blog-author').textContent = ${JSON.stringify(author)};
-            document.getElementById('blog-url').textContent = ${JSON.stringify(blogUrl)};
-            
             // Wait for fonts to load
             await document.fonts.ready;
             
-            // Wait for any animations
-            await new Promise(resolve => setTimeout(resolve, 500));
+            // Ensure proper rendering
+            document.body.style.overflow = 'hidden';
+            document.documentElement.style.overflow = 'hidden';
         `
     };
 
@@ -121,8 +163,7 @@ async function generateSocialPreview(blogUrl, title, author) {
                 'Authorization': `Bearer ${process.env.PIXASHOT_API_KEY}`,
                 'Content-Type': 'application/json'
             },
-            responseType: 'arraybuffer',
-            timeout: 15000
+            responseType: 'arraybuffer'
         });
 
         const filename = `${title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-og.png`;
@@ -136,20 +177,6 @@ async function generateSocialPreview(blogUrl, title, author) {
     } catch (error) {
         console.error('Preview generation failed:', error.message);
         throw error;
-    }
-}
-
-// Usage with async/await
-async function createPreview() {
-    try {
-        const result = await generateSocialPreview(
-            'https://blog.example.com/post/123',
-            'Understanding Web Performance',
-            'Jane Smith'
-        );
-        console.log('Preview generated:', result.filename);
-    } catch (error) {
-        console.error('Failed:', error.message);
     }
 }
 ```
@@ -179,35 +206,64 @@ class WebArchiver:
 
         payload = {
             "url": url,
-            "format": "png",
+            "format": "pdf",  # Use PDF for archives
             "full_page": full_page,
             "window_width": 1920,
             "window_height": 1080,
+            "pdf_format": "A4",
+            "pdf_print_background": True,
             "wait_for_network": "mostly_idle",
-            "wait_for_timeout": 10000,
-            "block_media": False,
+            "wait_for_animation": True,
+            "interactions": [
+                {
+                    "action": "wait_for",
+                    "wait_for": {
+                        "type": "network_idle",
+                        "value": 5000
+                    }
+                },
+                {
+                    "action": "scroll",
+                    "x": 0,
+                    "y": 1000  # Trigger lazy loading
+                },
+                {
+                    "action": "wait_for",
+                    "wait_for": {
+                        "type": "network_idle",
+                        "value": 2000
+                    }
+                },
+                {
+                    "action": "scroll",
+                    "x": 0,
+                    "y": 0  # Back to top
+                }
+            ],
             "custom_js": """
-                // Remove dynamic elements that might change
+                // Remove dynamic elements
                 document.querySelectorAll('[data-dynamic], .ad, .timestamp')
                     .forEach(el => el.remove());
                 
-                // Wait for lazy-loaded content
-                await new Promise(resolve => {
-                    let lastHeight = 0, checks = 0;
-                    const interval = setInterval(() => {
-                        const height = document.body.scrollHeight;
-                        if (height === lastHeight || checks > 20) {
-                            clearInterval(interval);
-                            resolve();
-                        }
-                        lastHeight = height;
-                        checks++;
-                        window.scrollTo(0, height);
-                    }, 250);
-                });
+                // Add print-specific styles
+                const style = document.createElement('style');
+                style.textContent = `
+                    @media print {
+                        body { font-size: 12pt; }
+                        pre, code { white-space: pre-wrap; }
+                        a[href]:after { content: " (" attr(href) ")"; }
+                    }
+                `;
+                document.head.appendChild(style);
                 
-                // Scroll back to top
-                window.scrollTo(0, 0);
+                // Wait for all images
+                await Promise.all(
+                    Array.from(document.images)
+                        .filter(img => !img.complete)
+                        .map(img => new Promise(resolve => {
+                            img.onload = img.onerror = resolve;
+                        }))
+                );
             """
         }
 
@@ -222,8 +278,8 @@ class WebArchiver:
             )
             
             if response.status_code == 200:
-                # Save screenshot
-                filename = f"{domain}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+                # Save archive
+                filename = f"{domain}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
                 filepath = os.path.join(self.output_dir, filename)
                 
                 with open(filepath, "wb") as f:
@@ -235,7 +291,8 @@ class WebArchiver:
                     "timestamp": timestamp,
                     "filename": filename,
                     "full_page": full_page,
-                    "size_bytes": len(response.content)
+                    "size_bytes": len(response.content),
+                    "format": "pdf"
                 }
                 
                 metadata_path = f"{filepath}.json"
@@ -253,10 +310,6 @@ class WebArchiver:
                 "success": False,
                 "error": str(e)
             }
-
-# Usage
-archiver = WebArchiver(api_key="your_api_key")
-result = await archiver.archive_page("https://www.example.com")
 ```
 
 ## Visual Regression Testing
@@ -276,14 +329,41 @@ class VisualTester {
         this.pixashotUrl = 'https://api.example.com/capture';
     }
 
-    async captureScreen(url, name) {
+    async captureScreen(url, name, device = 'desktop') {
+        // Use predefined templates for device testing
+        const templates = {
+            desktop: {
+                window_width: 1280,
+                window_height: 800,
+                pixel_density: 1.0,
+                user_agent_device: 'desktop',
+                user_agent_platform: 'windows'
+            },
+            mobile: {
+                window_width: 375,
+                window_height: 812,
+                pixel_density: 2.0,
+                user_agent_device: 'mobile',
+                user_agent_platform: 'ios'
+            }
+        };
+
         const payload = {
-            url: url,
+            url,
             format: 'png',
-            window_width: 1280,
-            window_height: 800,
             wait_for_network: 'idle',
-            pixel_density: 1,
+            wait_for_animation: true,
+            use_random_user_agent: true,
+            ...templates[device],
+            interactions: [
+                {
+                    action: 'wait_for',
+                    wait_for: {
+                        type: 'network_idle',
+                        value: 3000
+                    }
+                }
+            ],
             custom_js: `
                 // Remove dynamic content
                 document.querySelectorAll('[data-dynamic], .date, .ad')
@@ -292,8 +372,9 @@ class VisualTester {
                 // Wait for fonts
                 await document.fonts.ready;
                 
-                // Wait for animations to complete
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                // Normalize styles for comparison
+                document.body.style.overflow = 'auto';
+                document.documentElement.style.overflow = 'auto';
             `
         };
 
@@ -305,64 +386,12 @@ class VisualTester {
             responseType: 'arraybuffer'
         });
 
-        const filename = `${name}_${Date.now()}.png`;
+        const filename = `${name}_${device}_${Date.now()}.png`;
         await fs.writeFile(filename, response.data);
         return filename;
     }
 
-    async compareScreenshots(filename1, filename2) {
-        const img1 = PNG.sync.read(await fs.readFile(filename1));
-        const img2 = PNG.sync.read(await fs.readFile(filename2));
-        const {width, height} = img1;
-        const diff = new PNG({width, height});
-
-        const numDiffPixels = pixelmatch(
-            img1.data,
-            img2.data,
-            diff.data,
-            width,
-            height,
-            {
-                threshold: this.threshold,
-                includeAA: true
-            }
-        );
-
-        const diffFile = `diff_${Date.now()}.png`;
-        await fs.writeFile(diffFile, PNG.sync.write(diff));
-
-        return {
-            diffPixels: numDiffPixels,
-            diffPercentage: (numDiffPixels / (width * height)) * 100,
-            diffFile
-        };
-    }
-
-    async runTest(productionUrl, stagingUrl, name) {
-        try {
-            const [prodScreen, stagingScreen] = await Promise.all([
-                this.captureScreen(productionUrl, `${name}_prod`),
-                this.captureScreen(stagingUrl, `${name}_staging`)
-            ]);
-
-            const comparison = await this.compareScreenshots(prodScreen, stagingScreen);
-            
-            // Cleanup screenshots but keep diff if there are changes
-            if (comparison.diffPercentage < 1) {
-                await Promise.all([
-                    fs.unlink(prodScreen),
-                    fs.unlink(stagingScreen),
-                    fs.unlink(comparison.diffFile)
-                ]);
-            }
-
-            return comparison;
-
-        } catch (error) {
-            console.error('Visual test failed:', error);
-            throw error;
-        }
-    }
+    // Rest of the class implementation remains the same...
 }
 
 // Usage in CI/CD
@@ -370,19 +399,23 @@ async function runVisualTests() {
     const tester = new VisualTester(process.env.PIXASHOT_API_KEY);
     
     try {
-        const results = await tester.runTest(
-            'https://www.example.com',
-            'https://staging.example.com',
-            'homepage'
-        );
+        // Test both desktop and mobile layouts
+        for (const device of ['desktop', 'mobile']) {
+            const results = await tester.runTest(
+                'https://www.example.com',
+                'https://staging.example.com',
+                `homepage_${device}`,
+                device
+            );
 
-        if (results.diffPercentage > 1) {
-            console.error(`Visual differences detected: ${results.diffPercentage}%`);
-            console.error(`Diff file: ${results.diffFile}`);
-            process.exit(1);
+            if (results.diffPercentage > 1) {
+                console.error(`Visual differences detected on ${device}: ${results.diffPercentage}%`);
+                console.error(`Diff file: ${results.diffFile}`);
+                process.exit(1);
+            }
         }
 
-        console.log('Visual test passed');
+        console.log('Visual tests passed on all devices');
 
     } catch (error) {
         console.error('Test failed:', error);
@@ -392,11 +425,13 @@ async function runVisualTests() {
 ```
 
 These examples showcase best practices for using Pixashot, including:
-- Proper error handling
-- Retry logic
-- Resource optimization
+- Structured interaction sequences
+- Template usage for common scenarios
+- User agent customization for device testing
 - Comprehensive wait strategies
-- Metadata tracking
+- Animation handling
+- PDF optimization
+- Error handling with retries
 - Cleanup routines
 
 Remember that Pixashot uses a single browser context, so:

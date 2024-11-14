@@ -1,8 +1,3 @@
----
-excerpt: "Quick start guide for Pixashot, covering installation, authentication, and basic usage of the web screenshot service API."
-published_at: true
----
-
 # Getting Started
 
 ## Introduction
@@ -12,13 +7,15 @@ Pixashot is a powerful, flexible, and developer-friendly web screenshot service 
 Key features of Pixashot include:
 
 - High-quality screenshots at any resolution, including Retina displays
-- Full-page captures and custom viewport sizes
-- Multiple output formats (PNG, JPEG, WebP, PDF)
-- Custom JavaScript injection for page manipulation
-- Built-in popup and cookie consent blockers (configurable via environment variables)
+- Full-page captures and element-specific screenshots
+- Multiple output formats (PNG, JPEG, WebP, PDF, HTML)
+- Structured interaction sequences
+- Device simulation with user agent customization
+- Dark mode support and animation handling
+- Built-in popup and cookie consent blockers
+- Template system for common scenarios
+- Comprehensive PDF generation options
 - Flexible deployment options (Cloud Run, Docker, or self-hosted)
-- Single browser context for efficient resource usage
-- Configurable rate limiting and caching
 
 ## Quick Start with Docker
 
@@ -46,7 +43,17 @@ axios.post(PIXASHOT_API_URL, {
   url: 'https://example.com',
   format: 'png',
   full_page: true,
-  wait_for_network: 'idle'
+  wait_for_animation: true,
+  template: 'desktop',  // Use predefined template
+  interactions: [
+    {
+      action: 'wait_for',
+      wait_for: {
+        type: 'network_idle',
+        value: 2000
+      }
+    }
+  ]
 }, {
   headers: {
     'Authorization': `Bearer ${AUTH_TOKEN}`,
@@ -61,6 +68,55 @@ axios.post(PIXASHOT_API_URL, {
 .catch(error => {
   console.error('Error capturing screenshot:', error.message);
 });
+```
+
+## Basic Examples
+
+### Capture Full Page
+```javascript
+{
+  "url": "https://example.com",
+  "format": "png",
+  "full_page": true,
+  "wait_for_animation": true
+}
+```
+
+### Capture Mobile View
+```javascript
+{
+  "url": "https://example.com",
+  "template": "mobile",
+  "format": "png",
+  "dark_mode": true,
+  "pixel_density": 2.0
+}
+```
+
+### Capture with Interactions
+```javascript
+{
+  "url": "https://example.com",
+  "format": "png",
+  "interactions": [
+    {
+      "action": "click",
+      "selector": "#accept-cookies"
+    },
+    {
+      "action": "type",
+      "selector": "#search",
+      "text": "example"
+    },
+    {
+      "action": "wait_for",
+      "wait_for": {
+        "type": "network_idle",
+        "value": 2000
+      }
+    }
+  ]
+}
 ```
 
 ## Configuration
@@ -81,6 +137,7 @@ axios.post(PIXASHOT_API_URL, {
 ### Optional Settings
 - `RATE_LIMIT_ENABLED`: Enable rate limiting (default: false)
 - `RATE_LIMIT_CAPTURE`: Rate limit for capture endpoint (default: "1 per second")
+- `RATE_LIMIT_SIGNED`: Rate limit for signed URLs (default: "5 per second")
 - `CACHE_MAX_SIZE`: Maximum size for response caching (default: 0, disabled)
 
 ## Installation Methods
@@ -105,6 +162,7 @@ docker run -p 8080:8080 \
   -e KEEP_ALIVE=300 \
   -e RATE_LIMIT_ENABLED=true \
   -e RATE_LIMIT_CAPTURE="1 per second" \
+  -e RATE_LIMIT_SIGNED="5 per second" \
   -e CACHE_MAX_SIZE=1000 \
   --memory=2g \
   gpriday/pixashot:latest
@@ -112,9 +170,8 @@ docker run -p 8080:8080 \
 
 ### Google Cloud Run
 
-For cloud deployments, we recommend Google Cloud Run. See our [Cloud Run Deployment Guide](deployment-cloud-run.md) for detailed instructions.
+For cloud deployments, we recommend Google Cloud Run. Basic deployment:
 
-Basic deployment:
 ```bash
 gcloud run deploy pixashot \
   --image gpriday/pixashot:latest \
@@ -133,9 +190,11 @@ MAX_REQUESTS=1000,\
 KEEP_ALIVE=300"
 ```
 
+See our [Cloud Run Deployment Guide](deployment-cloud-run.md) for detailed instructions.
+
 ## Authentication
 
-Pixashot uses token-based authentication to secure API access. You need to include your authentication token in one of two ways:
+Pixashot supports two authentication methods:
 
 ### 1. Bearer Token Authentication
 
@@ -147,7 +206,7 @@ Authorization: Bearer your_secret_token
 
 ### 2. Signed URLs
 
-For scenarios where you can't include headers, use signed URLs:
+For scenarios where you can't include headers:
 
 ```javascript
 const crypto = require('crypto');
@@ -160,12 +219,6 @@ function generateSignedUrl(baseUrl, params, secretKey, expiresIn = 3600) {
   
   return `${baseUrl}?${new URLSearchParams(params)}&expires=${expires}&signature=${signature}`;
 }
-
-const signedUrl = generateSignedUrl(
-  'http://your-pixashot-instance.com/capture',
-  { url: 'https://example.com', format: 'png' },
-  'your_secret_key'
-);
 ```
 
 ## Health Checks
@@ -176,39 +229,73 @@ Pixashot provides three health check endpoints:
 # Basic liveness check
 curl http://localhost:8080/health/live
 
-# Readiness check (including browser status)
+# Readiness check
 curl http://localhost:8080/health/ready
 
 # Detailed health status
 curl http://localhost:8080/health
 ```
 
+## Templates
+
+Pixashot includes built-in templates for common scenarios:
+
+```javascript
+// Mobile device capture
+{
+  "url": "https://example.com",
+  "template": "mobile",
+  "format": "png"
+}
+
+// Desktop full page
+{
+  "url": "https://example.com",
+  "template": "desktop_full",
+  "format": "png"
+}
+
+// PDF article
+{
+  "url": "https://example.com",
+  "template": "article_pdf",
+  "format": "pdf"
+}
+```
+
 ## Best Practices
 
 1. **Resource Management**
-    - Start with 2GB memory minimum
-    - Monitor worker process health
-    - Use `wait_for_network` appropriately
+   - Start with 2GB memory minimum
+   - Monitor worker process health
+   - Use templates for consistent captures
 
 2. **Performance Optimization**
-    - Enable caching for repeated requests
-    - Use `block_media: true` when images aren't needed
-    - Set appropriate viewport sizes
+   - Use appropriate wait strategies
+   - Enable caching for repeated requests
+   - Set reasonable timeouts
+   - Use structured interactions
 
-3. **Security**
-    - Keep your AUTH_TOKEN secure
-    - Use HTTPS in production
-    - Implement rate limiting for public instances
+3. **Quality Control**
+   - Set appropriate pixel density
+   - Configure viewport sizes correctly
+   - Use wait_for_animation when needed
+   - Handle dark mode appropriately
 
 4. **Error Handling**
-    - Implement retry logic with exponential backoff
-    - Handle timeouts gracefully
-    - Monitor error rates
+   - Implement retry logic
+   - Handle timeouts gracefully
+   - Monitor error rates
+   - Use health checks
 
 Remember that Pixashot uses a single browser context for all requests, which means:
-- Extension settings (popup/cookie blocking) are server-wide
-- Better resource utilization
-- More consistent performance
-- Shared browser configuration across requests
+- Extension settings are server-wide
+- Resources are shared efficiently
+- Browser configuration is consistent
+- Performance is optimized
 
-For more advanced features and configurations, see our [Advanced Usage Guide](advanced-usage.md) and [API Reference](api-reference.md).
+For more advanced features and configurations, see our:
+- [Advanced Usage Guide](advanced-usage.md)
+- [API Reference](api-reference.md)
+- [Deployment Guide](deployment.md)
+- [Example Use Cases](example-use-cases.md)

@@ -16,30 +16,68 @@ Understanding Pixashot's single-context architecture is crucial for advanced usa
 - Consistent behavior across captures
 - Efficient resource utilization
 
-### Wait Strategies
+### Advanced Wait Strategies
 
-Configure network and content waiting appropriately:
+Configure network and content waiting using interaction steps:
 
 ```json
 {
   "url": "https://example.com",
-  "wait_for_network": "idle",      // or "mostly_idle"
-  "wait_for_timeout": 8000,        // milliseconds
-  "wait_for_selector": "#content", // optional
+  "wait_for_network": "idle",
+  "interactions": [
+    {
+      "action": "wait_for",
+      "wait_for": {
+        "type": "selector",
+        "value": "#dynamic-content"
+      }
+    },
+    {
+      "action": "wait_for",
+      "wait_for": {
+        "type": "network_mostly_idle",
+        "value": 2000
+      }
+    }
+  ],
+  "wait_for_animation": true,
   "format": "png"
 }
 ```
 
 Best practices:
 - Use "mostly_idle" for dynamic content
+- Combine multiple wait strategies for complex pages
 - Set reasonable timeouts (default: 8000ms)
-- Combine with selectors for specific elements
+- Use `wait_for_animation` for pages with CSS transitions
+
+## User Agent Management
+
+Control browser identification with user agent settings:
+
+```json
+{
+  "url": "https://example.com",
+  "use_random_user_agent": true,
+  "user_agent_device": "mobile",
+  "user_agent_platform": "ios",
+  "user_agent_browser": "safari",
+  "window_width": 375,
+  "window_height": 812,
+  "pixel_density": 2.0,
+  "format": "png"
+}
+```
+
+Tips:
+- Match viewport settings to device type
+- Use appropriate pixel density for device simulation
+- Consider platform-specific features
 
 ## Custom JavaScript Injection
 
-Inject custom JavaScript code to manipulate the page before capturing.
+Inject custom JavaScript code to manipulate the page before capturing:
 
-Example:
 ```json
 {
   "url": "https://example.com",
@@ -61,6 +99,7 @@ Example:
       observer.observe(document.body, { childList: true, subtree: true });
     });
   ",
+  "wait_for_animation": true,
   "format": "png"
 }
 ```
@@ -69,6 +108,7 @@ Best Practices:
 - Use async/await for timing-sensitive operations
 - Handle errors gracefully
 - Test thoroughly with different page states
+- Combine with interaction steps for complex scenarios
 
 ## CSS Manipulation
 
@@ -77,6 +117,7 @@ Modify page appearance using CSS injection:
 ```json
 {
   "url": "https://example.com",
+  "dark_mode": true,
   "custom_js": "
     const style = document.createElement('style');
     style.textContent = `
@@ -90,10 +131,20 @@ Modify page appearance using CSS injection:
         scroll-behavior: auto !important;
       }
       
-      /* Ensure proper rendering */
-      body {
-        min-height: 100vh;
-        overflow-x: hidden;
+      /* Dark mode enhancements */
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #121212;
+          color: #ffffff;
+        }
+      }
+      
+      /* Print optimizations */
+      @media print {
+        body {
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
       }
     `;
     document.head.appendChild(style);
@@ -106,55 +157,59 @@ Tips:
 - Use `!important` when necessary
 - Consider print-specific styles for PDF captures
 - Handle responsive layouts appropriately
+- Combine with dark mode setting for consistent results
 
-## Proxy Configuration
+## Complex Interaction Sequences
 
-Configure proxy settings at the server level using environment variables:
+Handle complex user interactions before capture:
 
-```bash
-# Server configuration
-PROXY_SERVER=proxy.example.com
-PROXY_PORT=8080
-PROXY_USERNAME=user
-PROXY_PASSWORD=pass
-```
-
-Security best practices:
-- Use environment variables for credentials
-- Implement proper access controls
-- Monitor proxy usage and performance
-
-## Cookie and Popup Management
-
-Cookie and popup handling is configured server-wide through environment variables:
-
-```bash
-# Server configuration
-USE_POPUP_BLOCKER=true
-USE_COOKIE_BLOCKER=true
-```
-
-For custom handling:
 ```json
 {
   "url": "https://example.com",
-  "custom_js": "
-    // Custom cookie handler
-    window.localStorage.setItem('cookie-preferences', 'accepted');
-    
-    // Custom popup handler
-    const config = { attributes: true, childList: true, subtree: true };
-    const observer = new MutationObserver((mutations) => {
-      document.querySelectorAll('[class*=popup], [class*=modal]')
-        .forEach(el => el.remove());
-    });
-    observer.observe(document.body, config);
-  ",
+  "interactions": [
+    {
+      "action": "click",
+      "selector": "#cookie-accept"
+    },
+    {
+      "action": "wait_for",
+      "wait_for": {
+        "type": "network_idle",
+        "value": 1000
+      }
+    },
+    {
+      "action": "type",
+      "selector": "#search",
+      "text": "example search"
+    },
+    {
+      "action": "click",
+      "selector": "#search-button"
+    },
+    {
+      "action": "wait_for",
+      "wait_for": {
+        "type": "selector",
+        "value": ".search-results"
+      }
+    },
+    {
+      "action": "scroll",
+      "x": 0,
+      "y": 500
+    },
+    {
+      "action": "hover",
+      "selector": ".dropdown-menu"
+    }
+  ],
+  "wait_for_animation": true,
   "format": "png"
 }
 ```
 
-## Handling Dynamic Content
+## Advanced Dynamic Content Handling
 
 Comprehensive approach to capturing dynamic content:
 
@@ -162,23 +217,16 @@ Comprehensive approach to capturing dynamic content:
 {
   "url": "https://example.com",
   "wait_for_network": "mostly_idle",
-  "wait_for_timeout": 8000,
+  "interactions": [
+    {
+      "action": "wait_for",
+      "wait_for": {
+        "type": "selector",
+        "value": "#dynamic-content"
+      }
+    }
+  ],
   "custom_js": "
-    // Wait for dynamic content
-    await new Promise(resolve => {
-      let attempts = 0;
-      const check = () => {
-        attempts++;
-        const content = document.querySelector('#dynamic-content');
-        if (content || attempts > 20) {
-          resolve();
-        } else {
-          setTimeout(check, 250);
-        }
-      };
-      check();
-    });
-
     // Ensure images are loaded
     await Promise.all(
       Array.from(document.images)
@@ -188,46 +236,69 @@ Comprehensive approach to capturing dynamic content:
         }))
     );
 
-    // Scroll to reveal lazy-loaded content
+    // Handle infinite scroll
     await new Promise(resolve => {
-      let position = 0;
-      const scroll = () => {
-        position += window.innerHeight;
-        if (position >= document.body.scrollHeight) {
-          window.scrollTo(0, 0);
+      let lastHeight = 0;
+      const checkHeight = () => {
+        const currentHeight = document.body.scrollHeight;
+        if (currentHeight === lastHeight) {
           resolve();
         } else {
-          window.scrollTo(0, position);
-          setTimeout(scroll, 100);
+          lastHeight = currentHeight;
+          window.scrollTo(0, currentHeight);
+          setTimeout(checkHeight, 250);
         }
       };
-      scroll();
+      checkHeight();
     });
+
+    // Return to top
+    window.scrollTo(0, 0);
   ",
+  "wait_for_animation": true,
   "block_media": false,
   "format": "png"
 }
 ```
 
-## Performance Optimization
+## PDF Generation
 
-### Memory Management
+Advanced PDF configuration:
 
 ```json
 {
   "url": "https://example.com",
-  "block_media": true,        // Block non-essential media
-  "window_width": 1280,       // Reasonable viewport size
-  "window_height": 720,
-  "pixel_density": 1.0,       // Adjust based on needs
-  "format": "png"
+  "format": "pdf",
+  "pdf_format": "A4",
+  "pdf_print_background": true,
+  "pdf_scale": 0.8,
+  "pdf_page_ranges": "1-5",
+  "full_page": true,
+  "wait_for_network": "idle",
+  "custom_js": "
+    // Add print-specific styles
+    const style = document.createElement('style');
+    style.textContent = `
+      @page {
+        margin: 2cm;
+      }
+      @media print {
+        .no-print { display: none !important; }
+        pre, code {
+          white-space: pre-wrap;
+          word-break: break-word;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  "
 }
 ```
 
-### Error Handling
+## Error Handling and Retries
 
 ```javascript
-// Client-side retry logic
+// Advanced retry logic with interaction handling
 async function captureWithRetry(url, maxAttempts = 3) {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
@@ -240,7 +311,17 @@ async function captureWithRetry(url, maxAttempts = 3) {
         body: JSON.stringify({
           url,
           wait_for_network: 'mostly_idle',
-          wait_for_timeout: attempt * 5000, // Increase timeout with each retry
+          wait_for_timeout: attempt * 5000,
+          interactions: [
+            {
+              action: 'wait_for',
+              wait_for: {
+                type: 'network_idle',
+                value: attempt * 2000
+              }
+            }
+          ],
+          wait_for_animation: true,
           format: 'png'
         })
       });
@@ -256,39 +337,16 @@ async function captureWithRetry(url, maxAttempts = 3) {
 }
 ```
 
-## Advanced Features
+## Templates for Common Scenarios
 
-### Dark Mode Capture
+Use templates to standardize capture configurations:
+
 ```json
 {
   "url": "https://example.com",
-  "dark_mode": true,
-  "wait_for_network": "idle",
+  "template": "mobile",  // Uses predefined mobile template
+  "custom_js": "...",   // Additional customizations
   "format": "png"
-}
-```
-
-### Geolocation Spoofing
-```json
-{
-  "url": "https://example.com",
-  "geolocation": {
-    "latitude": 37.7749,
-    "longitude": -122.4194,
-    "accuracy": 100
-  },
-  "format": "png"
-}
-```
-
-### PDF Generation
-```json
-{
-  "url": "https://example.com",
-  "format": "pdf",
-  "pdf_format": "A4",
-  "pdf_print_background": true,
-  "full_page": true
 }
 ```
 

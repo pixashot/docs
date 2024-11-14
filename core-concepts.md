@@ -1,8 +1,3 @@
----
-excerpt: "Overview of Pixashot's core concepts, explaining how it works, API structure, and the request flow process."
-published_at: true
----
-
 # Core Concepts
 
 Understanding the core concepts of Pixashot will help you make the most of its capabilities. This section covers how Pixashot works under the hood, provides an overview of the API, and explains the request flow.
@@ -16,50 +11,67 @@ Pixashot uses advanced browser automation technology to capture high-quality scr
 Pixashot uses a single browser context architecture for optimal performance and resource utilization:
 
 1. **Browser Initialization**:
-    - One Playwright browser instance is launched during startup
-    - Browser extensions (popup blocker, cookie consent blocker) are configured via environment variables
-    - A single browser context is created and maintained throughout the service lifetime
+   - One Playwright browser instance is launched during startup
+   - Browser extensions (popup blocker, cookie consent blocker) are configured via environment variables
+   - A single browser context is created and maintained throughout the service lifetime
+   - User agent settings are managed globally for consistency
 
 2. **Worker Processes**:
-    - Multiple worker processes handle incoming requests (configurable via `WORKERS`)
-    - Each worker shares the same browser context
-    - Workers are recycled after handling a configured number of requests (`MAX_REQUESTS`)
+   - Multiple worker processes handle incoming requests (configurable via `WORKERS`)
+   - Each worker shares the same browser context
+   - Workers are recycled after handling a configured number of requests (`MAX_REQUESTS`)
+   - Memory usage is monitored and managed automatically
 
 ### Screenshot Process
 
 When a request is received:
 
-1. **Page Creation**: A new page is created within the shared browser context.
+1. **Request Validation**:
+   - Parameters are validated using Pydantic models
+   - Template application (if specified)
+   - URL security validation
+   - Authentication verification
 
-2. **Page Configuration**:
-    - Viewport size is set
-    - Network conditions are configured
-    - Custom headers are applied if specified
+2. **Page Creation**:
+   - New page created within shared browser context
+   - Custom headers and user agent configured
+   - Geolocation settings applied (if specified)
 
-3. **Resource Management**:
-    - Media blocking is applied if requested
-    - Network idle detection is configured
-    - Timeout values are set
+3. **Page Configuration**:
+   - Viewport size and pixel density set
+   - Network conditions configured
+   - Dark mode enabled (if requested)
+   - Resource blocking applied (if specified)
 
-4. **Page Loading**:
-    - The URL is loaded or HTML content is rendered
-    - Network conditions are monitored
-    - Dynamic content is handled
+4. **Content Loading**:
+   - URL loaded or HTML content rendered
+   - Network state monitored
+   - Animation completion tracked
+   - Dynamic content handling
 
-5. **Page Customization**:
-    - Custom JavaScript execution
-    - Dark mode application (if requested)
-    - Geolocation spoofing (if specified)
+5. **Interaction Sequence**:
+   - Structured interaction steps executed
+   - Network idle checks performed
+   - Element visibility verified
+   - Custom JavaScript executed
 
-6. **Screenshot Capture**:
-    - Full-page or element-specific capture
-    - Format and quality settings applied
-    - Image processing and optimization
+6. **Page Customization**:
+   - Dark mode application
+   - Custom JavaScript injection
+   - Style modifications
+   - Print optimization (for PDF)
 
-7. **Cleanup**:
-    - Page is closed
-    - Resources are released
-    - Context is maintained for future requests
+7. **Screenshot Capture**:
+   - Format-specific preparation
+   - Quality settings applied
+   - Image optimization
+   - PDF configuration (if applicable)
+
+8. **Cleanup**:
+   - Page resources released
+   - Memory management
+   - Context maintenance
+   - Error logging
 
 ## API Overview
 
@@ -71,30 +83,65 @@ Pixashot provides a RESTful API with a single endpoint and comprehensive customi
 POST /capture
 ```
 
-### Key Parameters
+### Key Parameter Categories
 
-- `url` or `html_content`: Source content to capture
-- `format`: Output format (png, jpeg, webp, pdf)
-- `full_page`: Whether to capture the full scrollable page
-- `window_width`: Width of the viewport
-- `window_height`: Height of the viewport
-- `wait_for_network`: Network idle strategy ("idle" or "mostly_idle")
-- `wait_for_timeout`: Maximum wait time (milliseconds)
-- `custom_js`: Custom JavaScript to execute
-- `selector`: CSS selector for element capture
+#### Basic Options
+- `url` or `html_content`: Source content
+- `template`: Optional template name
+- `format`: Output format (png, jpeg, webp, pdf, html)
+
+#### Viewport and Screenshot
+- `window_width`: Viewport width
+- `window_height`: Viewport height
+- `full_page`: Full page capture
+- `selector`: Element-specific capture
+
+#### User Agent Configuration
+- `use_random_user_agent`: Enable random UA
+- `user_agent_device`: Device type (desktop/mobile)
+- `user_agent_platform`: OS platform
+- `user_agent_browser`: Browser type
+
+#### Interaction Options
+- `interactions`: Structured interaction steps
+- `wait_for_animation`: Animation completion
+- `wait_for_network`: Network state handling
+
+#### Image Settings
+- `image_quality`: Quality level
+- `pixel_density`: Display scaling
+- `dark_mode`: Dark mode rendering
+- `omit_background`: Transparency
+
+#### PDF-specific Options
+- `pdf_format`: Page format
+- `pdf_print_background`: Background printing
+- `pdf_scale`: Content scaling
+- `pdf_page_ranges`: Page selection
 
 ### Example Request
 
 ```json
 {
   "url": "https://example.com",
+  "template": "mobile",
   "format": "png",
-  "full_page": true,
-  "window_width": 1280,
-  "window_height": 720,
-  "wait_for_network": "idle",
-  "wait_for_timeout": 8000,
-  "block_media": true
+  "wait_for_animation": true,
+  "interactions": [
+    {
+      "action": "wait_for",
+      "wait_for": {
+        "type": "network_idle",
+        "value": 2000
+      }
+    },
+    {
+      "action": "click",
+      "selector": "#accept-cookies"
+    }
+  ],
+  "dark_mode": true,
+  "pixel_density": 2.0
 }
 ```
 
@@ -102,93 +149,107 @@ POST /capture
 
 Server-wide settings configured through environment variables:
 
-- `USE_POPUP_BLOCKER`: Enable/disable popup blocking
-- `USE_COOKIE_BLOCKER`: Enable/disable cookie consent blocking
-- `RATE_LIMIT_ENABLED`: Enable/disable rate limiting
-- `CACHE_MAX_SIZE`: Enable/disable response caching
+- `USE_POPUP_BLOCKER`: Popup blocking
+- `USE_COOKIE_BLOCKER`: Cookie consent blocking
+- `RATE_LIMIT_ENABLED`: Rate limiting
+- `CACHE_MAX_SIZE`: Response caching
+- `WORKERS`: Process count
+- `MAX_REQUESTS`: Worker lifecycle
 
 ## Request Flow
 
 Here's the complete flow of a Pixashot request:
 
-1. **Request Receipt**:
-    - Worker process accepts the request
-    - Request parameters are validated
-    - Authentication is verified (token or signed URL)
+1. **Request Processing**:
+   - Parameter validation
+   - Template application
+   - Security checks
+   - Authentication
 
-2. **Page Preparation**:
-    - New page created in shared context
-    - Viewport and settings configured
-    - Extensions and blockers already active from context
+2. **Page Setup**:
+   - Context configuration
+   - Device simulation
+   - Network settings
+   - Resource management
 
 3. **Content Loading**:
    ```mermaid
    graph TD
-     A[Request Received] --> B[Create Page]
-     B --> C[Configure Settings]
-     C --> D[Load Content]
-     D --> E[Wait for Network]
-     E --> F[Execute Custom JS]
-     F --> G[Capture Screenshot]
-     G --> H[Process Image]
-     H --> I[Send Response]
+     A[Request Received] --> B[Validate Parameters]
+     B --> C[Apply Template]
+     C --> D[Configure Page]
+     D --> E[Load Content]
+     E --> F[Execute Interactions]
+     F --> G[Wait for Completion]
+     G --> H[Capture Content]
+     H --> I[Process Result]
+     I --> J[Send Response]
    ```
 
 4. **Resource Management**:
-    - Browser context remains active
-    - Page is properly closed
-    - Memory is managed through worker recycling
+   - Memory optimization
+   - Context reuse
+   - Worker recycling
+   - Error recovery
 
 5. **Response Handling**:
-    - Image processing and optimization
-    - Format conversion if needed
-    - Response streaming for large captures
-    - Error handling and reporting
+   - Format processing
+   - Quality optimization
+   - Header configuration
+   - Error reporting
 
 ### Performance Considerations
 
 The single-context architecture provides several benefits:
 
 1. **Resource Efficiency**:
-    - Shared browser resources
-    - Reduced memory overhead
-    - Faster page creation
+   - Shared browser context
+   - Memory optimization
+   - Fast page creation
+   - Efficient resource usage
 
 2. **Consistent Behavior**:
-    - Extensions work consistently
-    - Settings persist across requests
-    - Predictable performance
+   - Standardized extensions
+   - Predictable rendering
+   - Reliable performance
+   - Consistent user agent handling
 
 3. **Scalability**:
-    - Worker processes handle concurrency
-    - Context sharing reduces overhead
-    - Efficient resource utilization
+   - Process-based concurrency
+   - Resource sharing
+   - Memory management
+   - Load distribution
 
 4. **Limitations**:
-    - Extension settings are server-wide
-    - Context sharing requires careful resource management
-    - Worker recycling needed for memory management
+   - Server-wide extensions
+   - Shared context constraints
+   - Memory management requirements
+   - Process cycling needs
 
 ## Best Practices
 
 1. **Resource Optimization**:
-    - Use appropriate `wait_for_network` settings
-    - Enable `block_media` when images aren't needed
-    - Set realistic viewport sizes
+   - Use templates for common scenarios
+   - Enable media blocking when appropriate
+   - Configure viewport sizes carefully
+   - Optimize interaction sequences
 
 2. **Error Handling**:
-    - Implement retry logic with backoff
-    - Monitor request timeouts
-    - Check health endpoints regularly
+   - Implement retry strategies
+   - Monitor timeouts
+   - Check health endpoints
+   - Log errors appropriately
 
 3. **Performance Tuning**:
-    - Configure worker count based on CPU cores
-    - Set appropriate request limits
-    - Use caching when possible
+   - Balance worker count
+   - Configure request limits
+   - Enable caching where appropriate
+   - Use appropriate wait strategies
 
 4. **Security**:
-    - Use HTTPS for all requests
-    - Implement rate limiting
-    - Keep authentication tokens secure
+   - Use HTTPS
+   - Implement rate limiting
+   - Secure authentication tokens
+   - Validate input URLs
 
 Understanding these core concepts helps you optimize your use of Pixashot and troubleshoot any issues that arise. For more detailed information about specific features, see our [Advanced Usage](advanced-usage.md) and [API Reference](api-reference.md) documentation.
