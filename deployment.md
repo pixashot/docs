@@ -17,9 +17,15 @@ gcloud run deploy pixashot \
   --image gpriday/pixashot:latest \
   --platform managed \
   --allow-unauthenticated \
-  --set-env-vars="CLOUD_RUN=true,AUTH_TOKEN=your_secret_token" \
+  --region us-central1 \
   --memory 2Gi \
-  --cpu 2
+  --cpu 2 \
+  --set-env-vars="AUTH_TOKEN=your_secret_token,\
+USE_POPUP_BLOCKER=true,\
+USE_COOKIE_BLOCKER=true,\
+WORKERS=4,\
+MAX_REQUESTS=1000,\
+KEEP_ALIVE=300"
 ```
 
 For more general information about Cloud Run deployment, refer to:
@@ -37,8 +43,6 @@ Amazon Web Services offers multiple options for deploying containerized applicat
 
 For serverless deployments, consider:
 - [AWS Lambda with Container Images](https://docs.aws.amazon.com/lambda/latest/dg/lambda-images.html)
-
-When deploying to AWS, remember to set `CLOUD_RUN=false` in your environment variables.
 
 ## Azure
 
@@ -72,16 +76,20 @@ Pixashot is available as a Docker image, making it easy to deploy in any environ
 docker pull gpriday/pixashot:latest
 docker run -p 8080:8080 \
   -e AUTH_TOKEN=your_secret_token \
-  -e CLOUD_RUN=false \
+  -e USE_POPUP_BLOCKER=true \
+  -e USE_COOKIE_BLOCKER=true \
   gpriday/pixashot:latest
 
 # Advanced deployment with resource limits
 docker run -p 8080:8080 \
   -e AUTH_TOKEN=your_secret_token \
-  -e CLOUD_RUN=false \
+  -e USE_POPUP_BLOCKER=true \
+  -e USE_COOKIE_BLOCKER=true \
   -e WORKERS=4 \
-  -e MEMORY_LIMIT=2048 \
-  -e TIMEOUT=300 \
+  -e MAX_REQUESTS=1000 \
+  -e KEEP_ALIVE=300 \
+  -e RATE_LIMIT_ENABLED=true \
+  -e RATE_LIMIT_CAPTURE="1 per second" \
   --memory=2g \
   gpriday/pixashot:latest
 ```
@@ -94,39 +102,91 @@ For more details on Docker deployment, refer to:
 
 Key environment variables for configuring your deployment:
 
-- `CLOUD_RUN`: Set to "true" for Google Cloud Run deployments, "false" otherwise
-- `WORKERS`: Number of worker processes (default: 4)
-- `MEMORY_LIMIT`: Memory limit in MB (default: 2048)
-- `TIMEOUT`: Request timeout in seconds (default: 300)
-- `AUTH_TOKEN`: Your authentication token
+### Required Settings
+- `AUTH_TOKEN`: Authentication token for API requests (required)
 - `PORT`: Server port (default: 8080)
+
+### Worker Configuration
+- `WORKERS`: Number of worker processes (default: 4)
+- `MAX_REQUESTS`: Maximum requests per worker before restart (default: 1000)
+- `KEEP_ALIVE`: Keep-alive timeout in seconds (default: 300)
+
+### Browser Extensions
+- `USE_POPUP_BLOCKER`: Enable/disable popup blocker extension (default: true)
+- `USE_COOKIE_BLOCKER`: Enable/disable cookie consent blocker extension (default: true)
+
+### Rate Limiting
+- `RATE_LIMIT_ENABLED`: Enable/disable rate limiting (default: false)
+- `RATE_LIMIT_CAPTURE`: Rate limit for capture endpoint (default: "1 per second")
+- `RATE_LIMIT_SIGNED`: Rate limit for signed URLs (default: "5 per second")
+
+### Proxy Configuration (Optional)
+- `PROXY_SERVER`: Proxy server address
+- `PROXY_PORT`: Proxy server port
+- `PROXY_USERNAME`: Proxy server username
+- `PROXY_PASSWORD`: Proxy server password
+
+### Caching (Optional)
+- `CACHE_MAX_SIZE`: Maximum size for response caching (default: 0, disabled)
+
+## Architecture Considerations
+
+Pixashot uses a single-context architecture where all requests share the same browser context. This design:
+- Improves memory efficiency
+- Reduces cold start times
+- Provides better resource utilization
+
+Key considerations for this architecture:
+
+1. **Browser Extensions**:
+   - Must be configured via environment variables at startup
+   - Cannot be changed per-request
+   - Apply to all requests in the context
+
+2. **Resource Management**:
+   - Memory is shared across all requests
+   - Single browser instance reduces overhead
+   - Worker processes handle request distribution
 
 ## Scaling Considerations
 
-When deploying Pixashot, consider the following for optimal performance and scalability:
+When deploying Pixashot, consider the following for optimal performance:
 
 1. **Resource Allocation**:
-    - Ensure adequate CPU (minimum 1 core recommended)
-    - Allocate sufficient memory (minimum 2GB per instance)
-    - Consider your concurrent request requirements when sizing instances
+   - CPU: Minimum 2 cores recommended
+   - Memory: Minimum 2GB per instance
+   - Disk: At least 1GB for browser data
 
-2. **Concurrency**: Adjust the number of workers based on your expected load.
-3. **Statelessness**: Design your deployment to be stateless for easy horizontal scaling.
-4. **Load Balancing**: Implement a load balancer for distributing traffic across multiple instances.
-5. **Monitoring**: Set up monitoring and alerting to track performance and usage.
+2. **Concurrency Settings**:
+   - Adjust `WORKERS` based on available CPU cores
+   - Set `MAX_REQUESTS` to prevent memory leaks
+   - Configure `KEEP_ALIVE` for your usage patterns
 
-For platform-specific scaling best practices, refer to:
-- [Google Cloud Run Scalability](https://cloud.google.com/run/docs/about-instance-autoscaling)
-- [AWS ECS Scalability](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/service-auto-scaling.html)
-- [Azure Container Instances Scalability](https://docs.microsoft.com/en-us/azure/container-instances/container-instances-orchestrator-relationship)
-- [Kubernetes Horizontal Pod Autoscaling](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/)
+3. **Load Balancing**:
+   - Use platform-native load balancing when available
+   - Consider sticky sessions for better context reuse
+   - Implement health checks for proper instance rotation
 
-Remember to always test your deployment thoroughly in a staging environment before going live. Each platform has its own set of best practices and optimization techniques, so be sure to consult the specific documentation for your chosen deployment method.
+4. **Monitoring**:
+   - Track memory usage across workers
+   - Monitor browser context health
+   - Set up alerting for error rates and response times
 
 ## Health Checks
 
-The service provides two health check endpoints:
-- `/health/live`: Basic liveness check
-- `/health/ready`: Readiness check including browser availability
+The service provides three health check endpoints:
 
-Configure these in your platform's health check settings to ensure proper monitoring of your deployment.
+- `/health/live`: Basic liveness check
+- `/health/ready`: Readiness check including browser context status
+- `/health`: Detailed health status including memory usage and request statistics
+
+Configure these in your platform's health check settings:
+
+```bash
+# Example health check configuration for Cloud Run
+gcloud run services update pixashot \
+  --set-health-checks-path=/health/live \
+  --min-instances=1
+```
+
+Remember to always test your deployment thoroughly in a staging environment before going live. Each platform has its own set of best practices and optimization techniques, so be sure to consult the specific documentation for your chosen deployment method.

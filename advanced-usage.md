@@ -7,120 +7,295 @@ published_at: true
 
 Pixashot offers advanced features for users who need more control over the capture process. These features allow for complex scenarios, custom manipulations, and handling of challenging web content.
 
+## Request Optimization
+
+Understanding Pixashot's single-context architecture is crucial for advanced usage:
+
+- Single browser context shared across requests
+- Extensions configured via environment variables
+- Consistent behavior across captures
+- Efficient resource utilization
+
+### Wait Strategies
+
+Configure network and content waiting appropriately:
+
+```json
+{
+  "url": "https://example.com",
+  "wait_for_network": "idle",      // or "mostly_idle"
+  "wait_for_timeout": 8000,        // milliseconds
+  "wait_for_selector": "#content", // optional
+  "format": "png"
+}
+```
+
+Best practices:
+- Use "mostly_idle" for dynamic content
+- Set reasonable timeouts (default: 8000ms)
+- Combine with selectors for specific elements
+
 ## Custom JavaScript Injection
 
 Inject custom JavaScript code to manipulate the page before capturing.
-
-- **Powerful Customization**: Modify page content, styles, or behavior dynamically.
-- **Pre-capture Automation**: Perform actions like clicking buttons or filling forms.
-- **Usage**: Use the `custom_js` parameter to provide your JavaScript code.
 
 Example:
 ```json
 {
   "url": "https://example.com",
-  "custom_js": "document.body.style.backgroundColor = 'lightblue'; document.querySelector('#popup').style.display = 'none';",
+  "custom_js": "
+    // Remove unwanted elements
+    document.querySelectorAll('.ad, .popup').forEach(el => el.remove());
+    
+    // Modify styles
+    document.body.style.backgroundColor = 'white';
+    
+    // Wait for dynamic content
+    await new Promise(resolve => {
+      const observer = new MutationObserver(() => {
+        if (document.querySelector('#dynamic-content')) {
+          observer.disconnect();
+          resolve();
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    });
+  ",
   "format": "png"
 }
 ```
 
 Best Practices:
-- Ensure your JavaScript is error-free to avoid capture failures.
-- Use this feature responsibly and in compliance with the target website's terms of service.
+- Use async/await for timing-sensitive operations
+- Handle errors gracefully
+- Test thoroughly with different page states
 
 ## CSS Manipulation
 
-Modify the CSS of the page to change its appearance before capture.
+Modify page appearance using CSS injection:
 
-- **Visual Adjustments**: Hide elements, change colors, or modify layouts.
-- **Consistent Styling**: Ensure captured content looks exactly as needed.
-- **Usage**: Inject CSS using the `custom_js` parameter.
-
-Example:
 ```json
 {
   "url": "https://example.com",
-  "custom_js": "const style = document.createElement('style'); style.textContent = 'body { font-family: Arial, sans-serif; } .ad { display: none; }'; document.head.appendChild(style);",
+  "custom_js": "
+    const style = document.createElement('style');
+    style.textContent = `
+      /* Hide unwanted elements */
+      .ad, .popup, .cookie-notice { display: none !important; }
+      
+      /* Improve capture quality */
+      * { 
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+      }
+      
+      /* Ensure proper rendering */
+      body {
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+    `;
+    document.head.appendChild(style);
+  ",
   "format": "png"
 }
 ```
 
 Tips:
-- Test your CSS changes thoroughly to ensure they don't break the page layout.
-- Consider using `!important` for styles that need to override existing rules.
+- Use `!important` when necessary
+- Consider print-specific styles for PDF captures
+- Handle responsive layouts appropriately
 
 ## Proxy Configuration
 
-Route requests through a proxy server for accessing geo-restricted content or for anonymity.
+Configure proxy settings at the server level using environment variables:
 
-- **Geo-restriction Bypass**: Access content as if from a different location.
-- **Network Control**: Useful for testing or security purposes.
-- **Usage**: Set `proxy_server`, `proxy_port`, and optionally `proxy_username` and `proxy_password`.
+```bash
+# Server configuration
+PROXY_SERVER=proxy.example.com
+PROXY_PORT=8080
+PROXY_USERNAME=user
+PROXY_PASSWORD=pass
+```
 
-Example:
+Security best practices:
+- Use environment variables for credentials
+- Implement proper access controls
+- Monitor proxy usage and performance
+
+## Cookie and Popup Management
+
+Cookie and popup handling is configured server-wide through environment variables:
+
+```bash
+# Server configuration
+USE_POPUP_BLOCKER=true
+USE_COOKIE_BLOCKER=true
+```
+
+For custom handling:
 ```json
 {
   "url": "https://example.com",
-  "proxy_server": "proxy.example.com",
-  "proxy_port": 8080,
-  "proxy_username": "user",
-  "proxy_password": "pass",
+  "custom_js": "
+    // Custom cookie handler
+    window.localStorage.setItem('cookie-preferences', 'accepted');
+    
+    // Custom popup handler
+    const config = { attributes: true, childList: true, subtree: true };
+    const observer = new MutationObserver((mutations) => {
+      document.querySelectorAll('[class*=popup], [class*=modal]')
+        .forEach(el => el.remove());
+    });
+    observer.observe(document.body, config);
+  ",
   "format": "png"
 }
 ```
-
-Security Note:
-- Always use secure, trusted proxies.
-- Be cautious with proxy credentials in your requests.
-
-## Cookie and Popup Handling
-
-Pixashot provides built-in mechanisms to handle common web annoyances like cookie consent banners and popups.
-
-- **Clean Captures**: Automatically remove or handle cookie consent popups.
-- **Popup Blocking**: Prevent unwanted popups from interfering with captures.
-- **Usage**: Enable or disable these features using `use_cookie_blocker` and `use_popup_blocker`.
-
-Example:
-```json
-{
-  "url": "https://example.com",
-  "use_cookie_blocker": true,
-  "use_popup_blocker": true,
-  "format": "png"
-}
-```
-
-Customization:
-- If the built-in blockers are insufficient, use custom JavaScript to handle specific popups or banners.
 
 ## Handling Dynamic Content
 
-Capture pages with dynamically loaded content accurately.
+Comprehensive approach to capturing dynamic content:
 
-- **Wait Conditions**: Use various wait strategies to ensure content is loaded.
-- **Custom Timing**: Set delays or wait for specific elements to appear.
-- **Usage**: Utilize `wait_for_timeout`, `wait_for_selector`, or custom JavaScript for complex scenarios.
-
-Example:
 ```json
 {
   "url": "https://example.com",
-  "wait_for_selector": "#dynamic-content",
-  "wait_for_timeout": 5000,
-  "custom_js": "window.scrollTo(0, document.body.scrollHeight);",
+  "wait_for_network": "mostly_idle",
+  "wait_for_timeout": 8000,
+  "custom_js": "
+    // Wait for dynamic content
+    await new Promise(resolve => {
+      let attempts = 0;
+      const check = () => {
+        attempts++;
+        const content = document.querySelector('#dynamic-content');
+        if (content || attempts > 20) {
+          resolve();
+        } else {
+          setTimeout(check, 250);
+        }
+      };
+      check();
+    });
+
+    // Ensure images are loaded
+    await Promise.all(
+      Array.from(document.images)
+        .filter(img => !img.complete)
+        .map(img => new Promise(resolve => {
+          img.onload = img.onerror = resolve;
+        }))
+    );
+
+    // Scroll to reveal lazy-loaded content
+    await new Promise(resolve => {
+      let position = 0;
+      const scroll = () => {
+        position += window.innerHeight;
+        if (position >= document.body.scrollHeight) {
+          window.scrollTo(0, 0);
+          resolve();
+        } else {
+          window.scrollTo(0, position);
+          setTimeout(scroll, 100);
+        }
+      };
+      scroll();
+    });
+  ",
+  "block_media": false,
   "format": "png"
 }
 ```
 
-Best Practices:
-- Combine multiple techniques for the most reliable captures of dynamic content.
-- Use the `wait_for_network` option to ensure all network requests are complete.
+## Performance Optimization
 
-Advanced Usage Tips:
-1. **Debugging**: Use `custom_js` to log information to the console, which can be retrieved in error messages.
-2. **Complex Interactions**: Combine custom JavaScript with wait conditions to perform multi-step interactions before capture.
-3. **Resource Management**: Use `block_media` to prevent loading of images or videos if they're not needed in your capture.
-4. **Error Handling**: Implement try-catch blocks in your custom JavaScript to gracefully handle potential errors.
+### Memory Management
 
-By leveraging these advanced features, you can tackle complex web capture scenarios, ensure consistency across different websites, and create highly customized screenshots or PDFs tailored to your specific needs. Remember to test your advanced configurations thoroughly, especially when dealing with dynamic content or custom scripts.
+```json
+{
+  "url": "https://example.com",
+  "block_media": true,        // Block non-essential media
+  "window_width": 1280,       // Reasonable viewport size
+  "window_height": 720,
+  "pixel_density": 1.0,       // Adjust based on needs
+  "format": "png"
+}
+```
+
+### Error Handling
+
+```javascript
+// Client-side retry logic
+async function captureWithRetry(url, maxAttempts = 3) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const response = await fetch('/capture', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${AUTH_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          url,
+          wait_for_network: 'mostly_idle',
+          wait_for_timeout: attempt * 5000, // Increase timeout with each retry
+          format: 'png'
+        })
+      });
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response;
+
+    } catch (error) {
+      if (attempt === maxAttempts) throw error;
+      await new Promise(r => setTimeout(r, Math.pow(2, attempt) * 1000));
+    }
+  }
+}
+```
+
+## Advanced Features
+
+### Dark Mode Capture
+```json
+{
+  "url": "https://example.com",
+  "dark_mode": true,
+  "wait_for_network": "idle",
+  "format": "png"
+}
+```
+
+### Geolocation Spoofing
+```json
+{
+  "url": "https://example.com",
+  "geolocation": {
+    "latitude": 37.7749,
+    "longitude": -122.4194,
+    "accuracy": 100
+  },
+  "format": "png"
+}
+```
+
+### PDF Generation
+```json
+{
+  "url": "https://example.com",
+  "format": "pdf",
+  "pdf_format": "A4",
+  "pdf_print_background": true,
+  "full_page": true
+}
+```
+
+Remember that Pixashot uses a single browser context, so:
+- Extension settings apply to all requests
+- Resources are shared efficiently
+- Memory management is crucial
+- Error handling should be robust
+
+For more details on specific features, refer to the [API Reference](api-reference.md).

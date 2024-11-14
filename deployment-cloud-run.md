@@ -1,17 +1,34 @@
+---
+excerpt: "Step-by-step guide to deploying Pixashot on Google Cloud Run, including initial setup, configuration options, monitoring, and best practices for production deployments."
+published_at: true
+---
+
 # Deploying Pixashot on Google Cloud Run
 
 This guide provides step-by-step instructions for deploying Pixashot on Google Cloud Run, a fully managed platform for containerized applications.
 
-## Prerequisites
+## Initial Setup (Required)
 
-Before you begin, ensure you have:
-- A Google Cloud Platform account with billing enabled
-- Google Cloud SDK (gcloud CLI) installed
-- Docker installed on your local machine (only needed if building custom images)
+Before deploying Pixashot, you must complete these one-time setup steps:
+
+```bash
+# 1. Install Google Cloud SDK if you haven't already
+# Visit: https://cloud.google.com/sdk/docs/install
+
+# 2. Login to Google Cloud
+gcloud auth login
+
+# 3. Set your project ID
+gcloud config set project YOUR_PROJECT_ID
+
+# 4. Enable required APIs
+gcloud services enable run.googleapis.com
+gcloud services enable secretmanager.googleapis.com
+```
 
 ## Quick Start
 
-For the fastest deployment using our pre-built image:
+Pixashot is available as a pre-built Docker image on Docker Hub, making deployment quick and easy. Once you've completed the initial setup above, you can deploy directly from Docker Hub:
 
 ```bash
 gcloud run deploy pixashot \
@@ -20,107 +37,118 @@ gcloud run deploy pixashot \
   --allow-unauthenticated \
   --region us-central1 \
   --memory 2Gi \
-  --cpu 2 \
+  --cpu 1 \
   --port 8080 \
-  --set-env-vars="CLOUD_RUN=true,AUTH_TOKEN=your_secret_token"
+  --timeout 300 \
+  --set-env-vars="AUTH_TOKEN=your_secret_token,\
+USE_POPUP_BLOCKER=true,\
+USE_COOKIE_BLOCKER=true,\
+WORKERS=4,\
+MAX_REQUESTS=1000,\
+KEEP_ALIVE=300"
 ```
 
-## Detailed Deployment Steps
+⚠️ **Important Notes**:
+- Replace `your_secret_token` with a secure authentication token. This token will be required for all API requests to your Pixashot instance.
+- The image `gpriday/pixashot:latest` will be automatically pulled from Docker Hub. No additional registry configuration is required.
 
-### 1. Initial Setup
-
+After deployment, you can test your instance:
 ```bash
-# Login to Google Cloud
-gcloud auth login
+# Get your service URL
+SERVICE_URL=$(gcloud run services describe pixashot --format='value(status.url)')
 
-# Set your project ID
-gcloud config set project YOUR_PROJECT_ID
-
-# Enable required APIs
-gcloud services enable run.googleapis.com
-gcloud services enable containerregistry.googleapis.com
+# Test with a simple screenshot request
+curl -X POST $SERVICE_URL/capture \
+  -H "Authorization: Bearer your_secret_token" \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://example.com","format":"png"}'
 ```
 
-### 2. Configuration Options
+## Environment Variables
 
-Pixashot can be configured using environment variables:
+### Required Settings
+- `AUTH_TOKEN`: Authentication token for API requests
+- `PORT`: Server port (default: 8080)
 
-```bash
-# Required settings
-AUTH_TOKEN=your_secret_token     # Authentication token for API requests
-CLOUD_RUN=true                   # Enable Cloud Run optimizations
+### Worker Configuration
+- `WORKERS`: Number of worker processes (default: 4)
+- `MAX_REQUESTS`: Maximum requests per worker before restart (default: 1000)
+- `KEEP_ALIVE`: Keep-alive timeout in seconds (default: 300)
 
-# Optional settings (with defaults)
-WORKERS=4                        # Number of worker processes
-MEMORY_LIMIT=2048               # Memory limit in MB
-TIMEOUT=300                     # Request timeout in seconds
-MAX_REQUESTS=1000               # Maximum requests per worker
-```
+### Browser Extensions
+- `USE_POPUP_BLOCKER`: Enable/disable popup blocker extension (default: true)
+- `USE_COOKIE_BLOCKER`: Enable/disable cookie consent blocker extension (default: true)
 
-### 3. Deployment Methods
+### Rate Limiting
+- `RATE_LIMIT_ENABLED`: Enable/disable rate limiting (default: false)
+- `RATE_LIMIT_CAPTURE`: Rate limit for capture endpoint (default: "1 per second")
+- `RATE_LIMIT_SIGNED`: Rate limit for signed URLs (default: "5 per second")
 
-#### Option 1: Using Google Cloud Console
+### Optional Settings
+- `CACHE_MAX_SIZE`: Maximum size for response caching (default: 0, disabled)
+- `PROXY_SERVER`, `PROXY_PORT`, `PROXY_USERNAME`, `PROXY_PASSWORD`: Proxy configuration
+
+## Deployment Methods
+
+### Option 1: Using Google Cloud Console
 
 1. Go to Cloud Run in Google Cloud Console
 2. Click "Create Service"
 3. Select "Deploy one revision from an existing container image"
 4. Enter `gpriday/pixashot:latest` as the container image
-5. Configure the following settings:
-   - Memory: 2GB
-   - CPU: 2
+5. Configure the service:
+   - Memory: 2GB (minimum recommended)
+   - CPU: 1 (recommended)
+   - Maximum requests per container: 80
    - Request timeout: 300 seconds
-   - Maximum concurrent requests: 80
    - Environment variables (as listed above)
    - Port: 8080
 
-#### Option 2: Using Command Line
+### Option 2: Advanced Command Line Deployment
 
 ```bash
-# Basic deployment
-gcloud run deploy pixashot \
-  --image gpriday/pixashot:latest \
-  --platform managed \
-  --allow-unauthenticated \
-  --region us-central1 \
-  --memory 2Gi \
-  --cpu 2 \
-  --port 8080 \
-  --set-env-vars="CLOUD_RUN=true,AUTH_TOKEN=your_secret_token"
-
 # Advanced deployment with all options
 gcloud run deploy pixashot \
   --image gpriday/pixashot:latest \
   --platform managed \
   --allow-unauthenticated \
   --region us-central1 \
-  --memory 2Gi \
+  --memory 4Gi \
   --cpu 2 \
   --port 8080 \
   --timeout 300 \
-  --concurrency 80 \
-  --min-instances 0 \
+  --concurrency 100 \
+  --min-instances 1 \
   --max-instances 10 \
-  --set-env-vars="CLOUD_RUN=true,AUTH_TOKEN=your_secret_token,WORKERS=4,MEMORY_LIMIT=2048,MAX_REQUESTS=1000"
+  --set-env-vars="AUTH_TOKEN=your_secret_token,\
+USE_POPUP_BLOCKER=true,\
+USE_COOKIE_BLOCKER=true,\
+WORKERS=8,\
+MAX_REQUESTS=1000,\
+KEEP_ALIVE=300,\
+RATE_LIMIT_ENABLED=true,\
+RATE_LIMIT_CAPTURE=5 per second,\
+CACHE_MAX_SIZE=1000"
 ```
 
-### 4. Resource Configuration
+## Resource Configuration
 
 Recommended resource settings for different workloads:
 
 ```bash
 # Light workload (1-10 requests/minute)
---memory 1Gi --cpu 1 --concurrency 40
+--memory 2Gi --cpu 1 --concurrency 40 --min-instances 0 --max-instances 2
 
 # Medium workload (10-50 requests/minute)
---memory 2Gi --cpu 2 --concurrency 80
+--memory 2Gi --cpu 2 --concurrency 80 --min-instances 1 --max-instances 5
 
 # Heavy workload (50+ requests/minute)
---memory 4Gi --cpu 4 --concurrency 100
+--memory 4Gi --cpu 4 --concurrency 100 --min-instances 2 --max-instances 10
 ```
 
-### 5. Continuous Deployment
+## Continuous Deployment
 
-Set up continuous deployment using Cloud Build:
+Example Cloud Build configuration:
 
 ```yaml
 # cloudbuild.yaml
@@ -129,98 +157,152 @@ steps:
     args:
       - 'run'
       - 'deploy'
-      - 'pixashot'
+      - '${_SERVICE_NAME}'
       - '--image'
       - 'gpriday/pixashot:latest'
       - '--platform'
       - 'managed'
       - '--region'
-      - 'us-central1'
+      - '${_REGION}'
       - '--memory'
-      - '2Gi'
+      - '${_MEMORY}'
       - '--cpu'
-      - '2'
+      - '${_CPU}'
+      - '--timeout'
+      - '${_TIMEOUT}'
       - '--set-env-vars'
-      - 'CLOUD_RUN=true,AUTH_TOKEN=${_AUTH_TOKEN}'
+      - 'AUTH_TOKEN=${_AUTH_TOKEN},USE_POPUP_BLOCKER=${_USE_POPUP_BLOCKER},USE_COOKIE_BLOCKER=${_USE_COOKIE_BLOCKER},WORKERS=${_WORKERS},MAX_REQUESTS=${_MAX_REQUESTS},KEEP_ALIVE=${_KEEP_ALIVE}'
+
+substitutions:
+  _SERVICE_NAME: pixashot
+  _REGION: us-central1
+  _MEMORY: 2Gi
+  _CPU: "2"
+  _TIMEOUT: "300"
+  _USE_POPUP_BLOCKER: "true"
+  _USE_COOKIE_BLOCKER: "true"
+  _WORKERS: "4"
+  _MAX_REQUESTS: "1000"
+  _KEEP_ALIVE: "300"
 ```
 
-### 6. Monitoring and Health Checks
+## Health Checks and Monitoring
 
-Configure health checks in Cloud Run:
+### Configure Health Checks
 
 1. Liveness Check:
-   - Path: `/health/live`
-   - Initial delay: 10s
-   - Interval: 30s
-   - Timeout: 5s
-   - Failure threshold: 3
+```bash
+gcloud run services update pixashot \
+  --set-liveness-check-path=/health/live \
+  --set-liveness-initial-delay=10s \
+  --set-liveness-timeout=5s \
+  --set-liveness-failure-threshold=3
+```
 
-2. Readiness Check:
-   - Path: `/health/ready`
-   - Initial delay: 15s
-   - Interval: 30s
-   - Timeout: 5s
-   - Failure threshold: 3
+2. Startup Check:
+```bash
+gcloud run services update pixashot \
+  --set-startup-check-path=/health/ready \
+  --set-startup-initial-delay=15s \
+  --set-startup-timeout=5s \
+  --set-startup-failure-threshold=3
+```
 
-### 7. Cost Optimization
+### Set Up Monitoring
 
-Tips for optimizing costs:
+```bash
+# Create memory usage alert
+gcloud beta monitoring alerts policies create \
+  --display-name="Pixashot High Memory Usage" \
+  --condition="resource.type = \"cloud_run_revision\" AND metric.type = \"run.googleapis.com/container/memory/utilization\" > 0.8" \
+  --duration=300s
 
-1. Set minimum instances to 0 for dev/staging environments
-2. Configure maximum instances based on expected load
-3. Use the free tier efficiently (2 million requests/month)
-4. Monitor and adjust resource allocation based on usage
+# View logs
+gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=pixashot"
+```
 
-### 8. Security Best Practices
+## Security Best Practices
 
-1. **Authentication**:
-   - Store AUTH_TOKEN in Secret Manager:
-   ```bash
-   # Create secret
-   echo -n "your_secret_token" | gcloud secrets create pixashot-auth-token --data-file=-
-   
-   # Use in deployment
-   gcloud run deploy pixashot \
-     ... \
-     --set-secrets="AUTH_TOKEN=pixashot-auth-token:latest"
-   ```
+### Secure Authentication Token
 
-2. **Network Security**:
-   - Enable Cloud Run VPC connector if needed
-   - Configure ingress settings appropriately
+```bash
+# Store auth token in Secret Manager
+echo -n "your_secret_token" | \
+  gcloud secrets create pixashot-auth-token --data-file=- --replication-policy="automatic"
 
-### 9. Troubleshooting
+# Use secret in deployment
+gcloud run deploy pixashot \
+  --image gpriday/pixashot:latest \
+  --set-secrets="/AUTH_TOKEN=pixashot-auth-token:latest" \
+  ... # other options
+```
 
-Common issues and solutions:
+### Network Security
 
-1. **Cold Start Issues**:
-   - Set minimum instances > 0
-   - Optimize container startup time
+```bash
+# Configure ingress settings
+gcloud run services update pixashot \
+  --ingress internal-and-cloud-load-balancing
+```
 
-2. **Memory Issues**:
-   - Increase memory allocation
-   - Monitor memory usage patterns
+## Troubleshooting
 
-3. **Timeout Issues**:
-   - Adjust timeout settings
-   - Optimize request handling
+### Common Issues and Solutions
 
-## Testing the Deployment
+1. **Cold Start Issues**
+   - Increase minimum instances
+   - Check startup logs: `gcloud logging read "resource.type=cloud_run_revision AND severity>=ERROR"`
+   - Monitor startup times in Cloud Run metrics
 
-After deployment, test your instance:
+2. **Memory Issues**
+   - Review memory usage: `gcloud monitoring metrics list | grep memory`
+   - Increase memory allocation if needed
+   - Check for memory leaks in logs
+
+3. **Browser Context Issues**
+   - Monitor browser health in logs
+   - Check error patterns
+   - Verify extension settings
+
+## Testing and Verification
 
 ```bash
 # Get the service URL
 SERVICE_URL=$(gcloud run services describe pixashot --format='value(status.url)')
 
-# Test the health endpoint
+# Test health endpoints
 curl $SERVICE_URL/health/live
+curl $SERVICE_URL/health/ready
+curl $SERVICE_URL/health
 
 # Test screenshot capture
 curl -X POST $SERVICE_URL/capture \
   -H "Authorization: Bearer your_secret_token" \
   -H "Content-Type: application/json" \
-  -d '{"url":"https://example.com","format":"png"}'
+  -d '{
+    "url": "https://example.com",
+    "format": "png",
+    "full_page": true,
+    "window_width": 1280,
+    "window_height": 720
+  }'
 ```
+
+## Cost Optimization
+
+1. **Instance Management**
+   - Use minimum instances of 0 for non-critical services
+   - Set appropriate maximum instances to control costs
+   - Use scheduled scaling for predictable loads
+
+2. **Resource Allocation**
+   - Start with 2Gi memory and 1 CPU
+   - Monitor usage patterns
+   - Adjust based on actual needs
+
+3. **Request Handling**
+   - Configure appropriate timeouts
+   - Enable caching when possible
+   - Implement rate limiting
 
 Remember that Cloud Run automatically handles scaling based on traffic, and you only pay for the resources used during request processing. Monitor your service's performance and costs regularly to optimize your deployment.

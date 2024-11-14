@@ -15,33 +15,41 @@ Key features of Pixashot include:
 - Full-page captures and custom viewport sizes
 - Multiple output formats (PNG, JPEG, WebP, PDF)
 - Custom JavaScript injection for page manipulation
-- Built-in popup and cookie consent blockers
-- Flexible deployment options (self-hosted or cloud-based)
+- Built-in popup and cookie consent blockers (configurable via environment variables)
+- Flexible deployment options (Cloud Run, Docker, or self-hosted)
+- Single browser context for efficient resource usage
+- Configurable rate limiting and caching
 
-## Quick Start Guide
+## Quick Start with Docker
 
-To get started with Pixashot quickly, follow these steps:
+The fastest way to get started with Pixashot is using our pre-built Docker image:
 
-1. Install Pixashot (see Installation section below)
-2. Set up authentication
-3. Make your first API call
+```bash
+docker pull gpriday/pixashot:latest
+docker run -p 8080:8080 \
+  -e AUTH_TOKEN=your_secret_token \
+  -e USE_POPUP_BLOCKER=true \
+  -e USE_COOKIE_BLOCKER=true \
+  gpriday/pixashot:latest
+```
 
-Here's a simple example using Node.js and axios to capture a screenshot:
+Once running, you can test it with a simple API call:
 
 ```javascript
 const axios = require('axios');
 const fs = require('fs');
 
-const PIXASHOT_API_URL = 'http://your-pixashot-instance.com/capture';
-const API_KEY = 'your_api_key_here';
+const PIXASHOT_API_URL = 'http://localhost:8080/capture';
+const AUTH_TOKEN = 'your_secret_token';
 
 axios.post(PIXASHOT_API_URL, {
   url: 'https://example.com',
   format: 'png',
-  full_page: true
+  full_page: true,
+  wait_for_network: 'idle'
 }, {
   headers: {
-    'Authorization': `Bearer ${API_KEY}`,
+    'Authorization': `Bearer ${AUTH_TOKEN}`,
     'Content-Type': 'application/json'
   },
   responseType: 'arraybuffer'
@@ -55,73 +63,91 @@ axios.post(PIXASHOT_API_URL, {
 });
 ```
 
-## Installation
+## Configuration
 
-Pixashot can be installed and run either using Docker or as a self-hosted application.
+### Required Environment Variables
+- `AUTH_TOKEN`: Your authentication token for API requests
+- `PORT`: Server port (default: 8080)
 
-### Docker Installation
+### Browser Extension Settings
+- `USE_POPUP_BLOCKER`: Enable/disable popup blocker (default: true)
+- `USE_COOKIE_BLOCKER`: Enable/disable cookie consent blocker (default: true)
 
-To install and run Pixashot using Docker:
+### Worker Configuration
+- `WORKERS`: Number of worker processes (default: 4)
+- `MAX_REQUESTS`: Maximum requests per worker (default: 1000)
+- `KEEP_ALIVE`: Keep-alive timeout in seconds (default: 300)
 
-1. Pull the Pixashot Docker image:
+### Optional Settings
+- `RATE_LIMIT_ENABLED`: Enable rate limiting (default: false)
+- `RATE_LIMIT_CAPTURE`: Rate limit for capture endpoint (default: "1 per second")
+- `CACHE_MAX_SIZE`: Maximum size for response caching (default: 0, disabled)
 
-```bash
-docker pull gpriday/pixashot:latest
-```
+## Installation Methods
 
-2. Run the container:
-
-```bash
-docker run -p 8080:8080 -e AUTH_TOKEN=your_secret_token gpriday/pixashot:latest
-```
-
-Replace `your_secret_token` with a secure authentication token of your choice.
-
-### Self-hosted Installation
-
-To install Pixashot as a self-hosted application:
-
-1. Clone the Pixashot repository:
+### Docker (Recommended)
 
 ```bash
-git clone https://github.com/yourusername/pixashot.git
-cd pixashot
+# Basic setup
+docker run -p 8080:8080 \
+  -e AUTH_TOKEN=your_secret_token \
+  -e USE_POPUP_BLOCKER=true \
+  -e USE_COOKIE_BLOCKER=true \
+  gpriday/pixashot:latest
+
+# Advanced setup with all options
+docker run -p 8080:8080 \
+  -e AUTH_TOKEN=your_secret_token \
+  -e USE_POPUP_BLOCKER=true \
+  -e USE_COOKIE_BLOCKER=true \
+  -e WORKERS=4 \
+  -e MAX_REQUESTS=1000 \
+  -e KEEP_ALIVE=300 \
+  -e RATE_LIMIT_ENABLED=true \
+  -e RATE_LIMIT_CAPTURE="1 per second" \
+  -e CACHE_MAX_SIZE=1000 \
+  --memory=2g \
+  gpriday/pixashot:latest
 ```
 
-2. Install dependencies:
+### Google Cloud Run
 
+For cloud deployments, we recommend Google Cloud Run. See our [Cloud Run Deployment Guide](deployment-cloud-run.md) for detailed instructions.
+
+Basic deployment:
 ```bash
-npm install
-```
-
-3. Set up environment variables:
-
-Create a `.env` file in the project root and add the following:
-
-```
-AUTH_TOKEN=your_secret_token
-PORT=8080
-```
-
-4. Start the application:
-
-```bash
-npm start
+gcloud run deploy pixashot \
+  --image gpriday/pixashot:latest \
+  --platform managed \
+  --allow-unauthenticated \
+  --region us-central1 \
+  --memory 2Gi \
+  --cpu 2 \
+  --port 8080 \
+  --timeout 300 \
+  --set-env-vars="AUTH_TOKEN=your_secret_token,\
+USE_POPUP_BLOCKER=true,\
+USE_COOKIE_BLOCKER=true,\
+WORKERS=4,\
+MAX_REQUESTS=1000,\
+KEEP_ALIVE=300"
 ```
 
 ## Authentication
 
-Pixashot uses token-based authentication to secure API access. You need to include this token in the `Authorization` header of your API requests.
+Pixashot uses token-based authentication to secure API access. You need to include your authentication token in one of two ways:
 
-There are two ways to authenticate with Pixashot:
+### 1. Bearer Token Authentication
 
-1. **Bearer Token**: Include the `AUTH_TOKEN` in the `Authorization` header of your requests:
+Include the `AUTH_TOKEN` in the `Authorization` header:
 
-```
+```http
 Authorization: Bearer your_secret_token
 ```
 
-2. **Signed URLs**: For scenarios where you can't include headers (e.g., image tags), you can use signed URLs. Here's an example of generating a signed URL using Node.js:
+### 2. Signed URLs
+
+For scenarios where you can't include headers, use signed URLs:
 
 ```javascript
 const crypto = require('crypto');
@@ -140,9 +166,49 @@ const signedUrl = generateSignedUrl(
   { url: 'https://example.com', format: 'png' },
   'your_secret_key'
 );
-console.log(signedUrl);
 ```
 
-Remember to keep your `AUTH_TOKEN` and secret key secure and never expose them in client-side code.
+## Health Checks
 
-With these steps, you should be ready to start using Pixashot for capturing web screenshots. Explore the rest of the documentation to learn about advanced features and customization options.
+Pixashot provides three health check endpoints:
+
+```bash
+# Basic liveness check
+curl http://localhost:8080/health/live
+
+# Readiness check (including browser status)
+curl http://localhost:8080/health/ready
+
+# Detailed health status
+curl http://localhost:8080/health
+```
+
+## Best Practices
+
+1. **Resource Management**
+    - Start with 2GB memory minimum
+    - Monitor worker process health
+    - Use `wait_for_network` appropriately
+
+2. **Performance Optimization**
+    - Enable caching for repeated requests
+    - Use `block_media: true` when images aren't needed
+    - Set appropriate viewport sizes
+
+3. **Security**
+    - Keep your AUTH_TOKEN secure
+    - Use HTTPS in production
+    - Implement rate limiting for public instances
+
+4. **Error Handling**
+    - Implement retry logic with exponential backoff
+    - Handle timeouts gracefully
+    - Monitor error rates
+
+Remember that Pixashot uses a single browser context for all requests, which means:
+- Extension settings (popup/cookie blocking) are server-wide
+- Better resource utilization
+- More consistent performance
+- Shared browser configuration across requests
+
+For more advanced features and configurations, see our [Advanced Usage Guide](advanced-usage.md) and [API Reference](api-reference.md).

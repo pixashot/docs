@@ -1,108 +1,182 @@
 ---
-excerpt: "Detailed explanation of Pixashot's key features, including full page capture, custom viewport, element capture, PDF generation, and more."
+excerpt: "Complete overview of Pixashot's capabilities, including screenshot capture options, page interactions, format support, and advanced features."
 published_at: true
 ---
 
 # Features
 
-Pixashot offers a comprehensive set of features designed to capture web content with precision and flexibility. Whether you need full-page screenshots, specific element captures, or customized viewport sizes, Pixashot has you covered.
+Pixashot is a powerful web screenshot service that offers a comprehensive set of features for capturing web content with precision and flexibility. This document outlines all available features and their usage.
 
-## Full Page Capture
+## Core Screenshot Capabilities
 
-Capture entire web pages, including content below the fold, with Pixashot's full page capture feature.
+### Full Page Capture
+- Automatically captures entire scrollable page content
+- Smart scroll detection for dynamic content
+- Configurable maximum page height (16384px by default)
+- Handles lazy-loaded content
 
-- **How it works**: Pixashot automatically scrolls through the entire page, capturing all content.
-- **Usage**: Set `full_page: true` in your capture request.
-- **Benefits**: Ideal for capturing long pages, ensuring no content is missed.
-
-Example:
 ```json
 {
   "url": "https://example.com",
   "full_page": true,
-  "format": "png"
+  "format": "png",
+  "wait_for_network": "idle"
 }
 ```
 
-## Custom Viewport
+### Element Capture
+- Target specific page elements using CSS selectors
+- Automatic element visibility detection
+- Handles dynamically loaded elements
+- Supports multiple selector formats
 
-Specify custom viewport dimensions to capture screenshots as they would appear on different devices.
+```json
+{
+  "url": "https://example.com",
+  "selector": "#main-content",
+  "format": "png",
+  "wait_for_selector": "#main-content"
+}
+```
 
-- **Customizable**: Set both width and height of the viewport.
-- **Device Simulation**: Easily simulate mobile, tablet, or desktop views.
-- **Usage**: Use `window_width` and `window_height` parameters.
+### Viewport Control
+- Customizable viewport dimensions
+- High-DPI support with adjustable pixel density
+- Mobile device viewport simulation
+- Automatic viewport adjustment for full-page captures
 
-Example:
 ```json
 {
   "url": "https://example.com",
   "window_width": 1280,
   "window_height": 720,
+  "pixel_density": 2.0,
   "format": "png"
 }
 ```
 
-## Element Capture
+## Output Formats
 
-Capture specific elements on a page using CSS selectors.
+### Image Formats
+- **PNG**: Lossless quality with transparency support
+- **JPEG**: Adjustable quality compression
+- **WebP**: Modern format with superior compression
+- Configurable image quality settings
+- Optional background transparency
 
-- **Precision**: Target exact elements for capture.
-- **Flexibility**: Use any valid CSS selector.
-- **Usage**: Specify the `selector` parameter in your request.
-
-Example:
 ```json
 {
   "url": "https://example.com",
-  "selector": "#main-content",
-  "format": "png"
+  "format": "jpeg",
+  "image_quality": 80,
+  "omit_background": false
 }
 ```
 
-## PDF Generation
+### PDF Generation
+- Professional PDF document creation
+- Multiple paper size options (A4, Letter, Legal)
+- Configurable page margins and scaling
+- Optional background graphics
+- Custom page ranges support
 
-Generate PDF documents from web pages with customizable options.
-
-- **Full Control**: Adjust page size, orientation, and margins.
-- **Background Graphics**: Option to include or exclude background graphics.
-- **Usage**: Set `format: "pdf"` and use PDF-specific options.
-
-Example:
 ```json
 {
   "url": "https://example.com",
   "format": "pdf",
   "pdf_format": "A4",
-  "pdf_print_background": true
+  "pdf_print_background": true,
+  "pdf_scale": 1.0,
+  "pdf_page_ranges": "1-5"
 }
 ```
 
-## Multiple Formats (PNG, JPEG, WebP)
+### HTML Capture
+- Complete HTML document capture
+- Optional resource inclusion
+- Dark mode preservation
+- Dynamic content handling
 
-Capture screenshots in various image formats to suit your needs.
-
-- **Supported Formats**: PNG, JPEG, and WebP.
-- **Quality Control**: Adjust image quality for JPEG and WebP.
-- **Usage**: Specify the desired format using the `format` parameter.
-
-Example:
 ```json
 {
   "url": "https://example.com",
-  "format": "webp",
-  "image_quality": 80
+  "format": "html",
+  "wait_for_network": "idle"
 }
 ```
 
-## Dark Mode Capture
+## Page Interaction Features
 
-Capture web pages in dark mode, simulating user preferences for dark themes.
+### Wait Conditions
+- Network activity monitoring
+- Element presence detection
+- Custom timeout configuration
+- Animation completion detection
 
-- **Simulation**: Applies dark mode styles to the page before capture.
-- **Compatibility**: Works with sites that support dark mode.
-- **Usage**: Set `dark_mode: true` in your request.
+```json
+{
+  "url": "https://example.com",
+  "wait_for_network": "idle",
+  "wait_for_selector": "#dynamic-content",
+  "wait_for_timeout": 5000,
+  "wait_for_animation": true
+}
+```
 
-Example:
+### Custom JavaScript
+- Pre-capture JavaScript execution
+- DOM manipulation support
+- Dynamic content handling
+- Custom styling injection
+
+```json
+{
+  "url": "https://example.com",
+  "custom_js": "document.body.style.backgroundColor = 'white';",
+  "format": "png"
+}
+```
+
+### Interaction Sequences
+- Click simulation
+- Text input
+- Hover actions
+- Custom scroll positions
+- Complex multi-step interactions
+
+```json
+{
+  "url": "https://example.com",
+  "interactions": [
+    {
+      "action": "click",
+      "selector": "#accept-cookies"
+    },
+    {
+      "action": "type",
+      "selector": "#search",
+      "text": "example"
+    },
+    {
+      "action": "wait_for",
+      "wait_for": {
+        "type": "network_idle",
+        "value": 2000
+      }
+    }
+  ],
+  "format": "png"
+}
+```
+
+## Advanced Features
+
+### Dark Mode Support
+- Dark mode simulation
+- System preference emulation
+- CSS scheme handling
+- Consistent dark mode capture
+
 ```json
 {
   "url": "https://example.com",
@@ -111,15 +185,12 @@ Example:
 }
 ```
 
-## Geolocation Spoofing
+### Geolocation Spoofing
+- Precise location simulation
+- Configurable accuracy
+- Full geolocation API support
+- Location-based testing
 
-Capture pages as they appear from different geographic locations by spoofing geolocation.
-
-- **Precise Control**: Set exact latitude, longitude, and accuracy.
-- **Testing**: Ideal for testing location-based content and features.
-- **Usage**: Use the `geolocation` parameter with latitude, longitude, and accuracy.
-
-Example:
 ```json
 {
   "url": "https://example.com",
@@ -132,24 +203,88 @@ Example:
 }
 ```
 
-## Custom Wait Conditions
+### Resource Control
+- Optional media blocking
+- Popup blocking (configurable)
+- Cookie consent handling
+- Network request management
 
-Ensure the page is in the desired state before capturing by specifying custom wait conditions.
-
-- **Network Idle**: Wait for network activity to settle.
-- **Selector**: Wait for a specific element to appear.
-- **Timeout**: Set a custom timeout duration.
-- **Usage**: Use `wait_for_network`, `wait_for_selector`, or `wait_for_timeout` parameters.
-
-Example:
 ```json
 {
   "url": "https://example.com",
-  "wait_for_selector": "#dynamic-content",
-  "wait_for_network": "idle",
-  "wait_for_timeout": 5000,
+  "block_media": true,
   "format": "png"
 }
 ```
 
-These features provide a powerful toolkit for capturing web content in various scenarios. Whether you're performing web testing, generating thumbnails, or archiving web pages, Pixashot's diverse feature set ensures you can capture exactly what you need, how you need it.
+### User Agent Control
+- Random user agent generation
+- Device type specification
+- Platform customization
+- Browser version control
+
+```json
+{
+  "url": "https://example.com",
+  "use_random_user_agent": true,
+  "user_agent_device": "desktop",
+  "user_agent_platform": "windows",
+  "user_agent_browser": "chrome",
+  "format": "png"
+}
+```
+
+## Performance Features
+
+### Request Optimization
+- Single browser context architecture
+- Efficient resource sharing
+- Memory usage optimization
+- Request queuing and management
+
+### Caching Support
+- Optional response caching
+- Configurable cache size
+- Cache invalidation controls
+- Performance optimization
+
+### Rate Limiting
+- Configurable rate limits
+- Separate limits for different endpoints
+- Rate limit headers
+- Graceful handling of limits
+
+## Security Features
+
+### Authentication
+- Token-based authentication
+- Signed URL support
+- Flexible authentication options
+- Secure token management
+
+### Network Security
+- HTTPS error handling
+- Proxy support with authentication
+- Custom header support
+- Request validation
+
+```json
+{
+  "url": "https://example.com",
+  "proxy_server": "proxy.example.com",
+  "proxy_port": 8080,
+  "proxy_username": "user",
+  "proxy_password": "pass",
+  "format": "png"
+}
+```
+
+## Health Monitoring
+
+### Health Checks
+- Liveness probe endpoint
+- Readiness probe endpoint
+- Detailed health status
+- Resource usage monitoring
+
+These features make Pixashot a versatile tool for various use cases, from automated testing to content archival. For detailed implementation examples, refer to our [Example Use Cases](example-use-cases.md) documentation.

@@ -1,114 +1,306 @@
 ---
-excerpt: "Security guidelines for Pixashot, covering API key management, HTTPS configuration, data privacy, and best practices for maintaining a secure deployment."
+excerpt: "Comprehensive security guide for Pixashot, covering authentication, data protection, deployment security, and best practices for secure screenshot capture."
 published_at: true
 ---
 
 # Security
 
-Ensuring the security of your Pixashot deployment is crucial. This section covers key aspects of security, including API key management, HTTPS configuration, data privacy, and best practices.
+Security is a core feature of Pixashot. This guide covers essential security aspects of deploying, configuring, and using Pixashot in production environments.
 
-## API Key Management
+## Authentication
 
-Proper management of API keys is essential to maintain the security of your Pixashot instance.
+### Bearer Token Authentication
 
-- **Generation**: Use strong, unique API keys for each client or application.
-- **Storage**: Store API keys securely, never in plaintext or in version control systems.
-- **Rotation**: Regularly rotate API keys to minimize the impact of potential breaches.
-- **Revocation**: Implement a process to quickly revoke compromised API keys.
+Pixashot uses token-based authentication for API access:
 
-Best Practices:
-- Use environment variables or secure key management systems to store API keys.
-- Implement API key expiration and automatic rotation policies.
-- Log all API key usage for audit purposes.
+```bash
+# Configuration
+export AUTH_TOKEN="your_secure_token_here"
+```
 
-## HTTPS Configuration
+Best practices for token management:
+- Use cryptographically secure random tokens (minimum 32 bytes)
+- Store tokens in secure environment variables or secret management systems
+- Rotate tokens regularly (recommended: every 90 days)
+- Never commit tokens to version control
+- Use different tokens for development and production
 
-Securing your Pixashot instance with HTTPS is crucial to protect data in transit.
+Example token generation:
+```bash
+# Generate a secure random token
+openssl rand -hex 32
+```
 
-- **SSL/TLS Certificates**: Use valid SSL/TLS certificates from trusted Certificate Authorities.
-- **Protocol Version**: Support only TLS 1.2 and above, disabling older, insecure protocols.
-- **Cipher Suites**: Configure strong cipher suites and disable weak ones.
+### Signed URLs
 
-Implementation:
-1. Obtain an SSL/TLS certificate (e.g., Let's Encrypt, commercial CA).
-2. Configure your web server or reverse proxy with the certificate.
-3. Enable HSTS (HTTP Strict Transport Security) for added security.
+For scenarios requiring temporary access:
 
-Example Nginx configuration:
+```python
+import hmac
+import hashlib
+import time
+import base64
+
+def generate_signed_url(base_url, params, secret_key, expires_in=3600):
+    """Generate a signed URL with expiration."""
+    expiration = int(time.time()) + expires_in
+    params['expires'] = expiration
+    
+    # Create signature
+    message = '&'.join(f"{k}={v}" for k, v in sorted(params.items()))
+    signature = base64.urlsafe_b64encode(
+        hmac.new(
+            secret_key.encode('utf-8'),
+            message.encode('utf-8'),
+            hashlib.sha256
+        ).digest()
+    ).rstrip(b'=').decode('ascii')
+    
+    params['signature'] = signature
+    query_string = '&'.join(f"{k}={v}" for k, v in params.items())
+    return f"{base_url}?{query_string}"
+```
+
+## Network Security
+
+### HTTPS Configuration
+
+Required security headers:
 ```nginx
-server {
-    listen 443 ssl http2;
-    server_name your-pixashot-domain.com;
+# Nginx configuration
+add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+add_header X-Content-Type-Options "nosniff" always;
+add_header X-Frame-Options "DENY" always;
+add_header X-XSS-Protection "1; mode=block" always;
+add_header Content-Security-Policy "default-src 'self'; img-src 'self' data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';" always;
+```
 
-    ssl_certificate /path/to/your/certificate.crt;
-    ssl_certificate_key /path/to/your/certificate.key;
+### Rate Limiting
 
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_prefer_server_ciphers on;
-    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
+Configure rate limits to prevent abuse:
 
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+```bash
+# Environment configuration
+export RATE_LIMIT_ENABLED="true"
+export RATE_LIMIT_CAPTURE="1 per second"    # Capture endpoint limit
+export RATE_LIMIT_SIGNED="5 per second"     # Signed URL limit
+```
 
-    # Other server configurations...
-}
+Rate limit response headers:
+```http
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 59
+X-RateLimit-Reset: 1635724800
+```
+
+### Proxy Configuration
+
+Secure proxy settings:
+```bash
+# Environment configuration
+export PROXY_SERVER="proxy.example.com"
+export PROXY_PORT="8080"
+export PROXY_USERNAME="proxy_user"
+export PROXY_PASSWORD="secure_proxy_password"
+```
+
+## Resource Security
+
+### Browser Context Security
+
+Pixashot implements several browser-level security measures:
+
+1. **Sandboxed Execution**:
+   ```javascript
+   // Browser launch arguments
+   args=[
+       '--disable-features=site-per-process',
+       '--no-sandbox',
+       '--disable-setuid-sandbox',
+       '--disable-dev-shm-usage',
+   ]
+   ```
+
+2. **Resource Control**:
+   ```json
+   {
+     "block_media": true,
+     "ignore_https_errors": false,
+     "use_popup_blocker": true,
+     "use_cookie_blocker": true
+   }
+   ```
+
+3. **Custom Header Security**:
+   ```python
+   # Input validation for custom headers
+   @model_validator(mode='after')
+   def validate_custom_headers(self) -> 'CaptureRequest':
+       if self.custom_headers:
+           for header_name in self.custom_headers.keys():
+               if not isinstance(header_name, str) or ':' in header_name:
+                   raise ValueError(f"Invalid header name: {header_name}")
+       return self
+   ```
+
+### URL Security
+
+Built-in URL validation and security checks:
+
+```python
+def validate_url(url: str) -> Tuple[bool, Optional[str]]:
+    """
+    Validate URL against security rules.
+    Returns (is_valid, error_message if any)
+    """
+    # Validate URL format
+    try:
+        parsed = urlparse(url)
+        if not all([parsed.scheme, parsed.netloc]):
+            return False, "Invalid URL format"
+        
+        # Check for allowed schemes
+        if parsed.scheme not in {'http', 'https'}:
+            return False, "Invalid URL scheme"
+            
+        # Block internal/private networks
+        if not is_public_ip(parsed.netloc):
+            return False, "Internal network access not allowed"
+            
+        return True, None
+        
+    except Exception as e:
+        return False, str(e)
 ```
 
 ## Data Privacy
 
-Protecting user data and ensuring privacy is a key responsibility when using Pixashot.
+### Request Data Protection
 
-- **Data Minimization**: Only capture and store necessary information.
-- **Data Encryption**: Encrypt sensitive data at rest and in transit.
-- **Access Control**: Implement strict access controls to captured data.
-- **Data Retention**: Establish and enforce data retention policies.
+1. **Memory Management**:
+   ```python
+   # Secure cleanup after capture
+   try:
+       screenshot_data = await capture_screenshot(options)
+       return screenshot_data
+   finally:
+       await cleanup_resources()
+   ```
 
-Considerations:
-- Be aware of and comply with relevant data protection regulations (e.g., GDPR, CCPA).
-- Implement mechanisms for users to request data deletion or access their captured data.
-- Regularly audit data access and usage.
+2. **Temporary File Handling**:
+   ```python
+   def secure_tempfile():
+       """Create secure temporary file with proper permissions."""
+       fd, path = tempfile.mkstemp(prefix='pixashot_', suffix='.tmp')
+       os.chmod(path, 0o600)  # Restrictive permissions
+       return fd, path
+   ```
 
-## Best Practices
+### Response Security
 
-Follow these security best practices to maintain a robust and secure Pixashot deployment:
+1. **Content Security**:
+   ```python
+   @app.after_request
+   def secure_response(response):
+       """Add security headers to all responses."""
+       response.headers['X-Content-Type-Options'] = 'nosniff'
+       response.headers['X-Frame-Options'] = 'DENY'
+       return response
+   ```
 
-1. **Regular Updates**:
-    - Keep Pixashot, its dependencies, and the host system up to date with the latest security patches.
+2. **Error Handling**:
+   ```python
+   def handle_error(error):
+       """Secure error handling without leaking details."""
+       return {
+           'status': 'error',
+           'message': 'An error occurred',
+           'error_id': generate_error_id()  # For logging correlation
+       }, error.code
+   ```
 
-2. **Principle of Least Privilege**:
-    - Run Pixashot with minimal necessary permissions.
-    - Use separate accounts for administration and regular operations.
+## Deployment Security
 
-3. **Network Security**:
-    - Use firewalls to restrict access to only necessary ports and IP ranges.
-    - Implement rate limiting to prevent abuse and DoS attacks.
+### Docker Security
 
-4. **Monitoring and Logging**:
-    - Set up comprehensive logging for all Pixashot activities.
-    - Implement real-time monitoring and alerting for suspicious activities.
+Secure Dockerfile configuration:
+```dockerfile
+# Run as non-root user
+RUN useradd -m appuser && \
+    mkdir -p /tmp/screenshots /app/data /app/logs && \
+    chown -R appuser:appuser /app /tmp/screenshots /app/data /app/logs
 
-5. **Secure Configurations**:
-    - Disable unnecessary features and services.
-    - Use secure defaults and avoid exposing debug information in production.
+USER appuser
 
-6. **Input Validation**:
-    - Validate and sanitize all user inputs to prevent injection attacks.
-
-7. **Content Security Policy (CSP)**:
-    - Implement a strict CSP to mitigate XSS and other injection attacks.
-
-8. **Regular Security Audits**:
-    - Conduct periodic security assessments and penetration testing.
-
-9. **Incident Response Plan**:
-    - Develop and maintain an incident response plan for security breaches.
-
-10. **Third-Party Dependencies**:
-    - Regularly audit and update third-party libraries and dependencies.
-    - Use tools like OWASP Dependency-Check to identify known vulnerabilities.
-
-Example CSP Header:
-```http
-Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; frame-ancestors 'none'; base-uri 'self';
+# Security-related arguments
+ENV NODE_OPTIONS="--no-experimental-fetch --no-warning"
 ```
 
-By implementing these security measures and following best practices, you can significantly enhance the security posture of your Pixashot deployment. Remember that security is an ongoing process, requiring regular attention and updates to stay ahead of emerging threats.
+### Cloud Run Security
+
+Secure Cloud Run configuration:
+```yaml
+steps:
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - '${_SERVICE_NAME}'
+      - '--image'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}:${_TAG}'
+      - '--platform'
+      - 'managed'
+      - '--ingress'
+      - 'internal-and-cloud-load-balancing'
+      - '--memory'
+      - '${_MEMORY}'
+      - '--cpu'
+      - '${_CPU}'
+      - '--set-secrets'
+      - '/AUTH_TOKEN=pixashot-auth-token:latest'
+```
+
+## Security Checklist
+
+- [ ] Configure authentication token
+- [ ] Enable HTTPS with proper certificates
+- [ ] Set up rate limiting
+- [ ] Configure proxy settings (if needed)
+- [ ] Enable security headers
+- [ ] Set up monitoring and logging
+- [ ] Implement proper error handling
+- [ ] Configure resource limits
+- [ ] Set up automated security updates
+- [ ] Implement access controls
+- [ ] Configure backup and recovery
+- [ ] Set up incident response plan
+
+## Monitoring and Auditing
+
+1. **Health Monitoring**:
+   ```bash
+   # Check system health
+   curl https://your-instance/health
+   
+   # Check detailed status
+   curl https://your-instance/health/ready
+   ```
+
+2. **Security Logging**:
+   ```python
+   logger.info('Capture request', extra={
+       'url': request.url,
+       'client_ip': request.remote_addr,
+       'user_agent': request.headers.get('User-Agent'),
+       'request_id': request.headers.get('X-Request-ID')
+   })
+   ```
+
+Remember:
+- Regularly update all components and dependencies
+- Monitor security advisories
+- Conduct regular security audits
+- Maintain incident response procedures
+- Keep security documentation up to date
+
+For more information about specific security features, refer to the [API Reference](api-reference.md) and [Deployment Guide](deployment.md).

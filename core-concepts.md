@@ -9,27 +9,61 @@ Understanding the core concepts of Pixashot will help you make the most of its c
 
 ## How Pixashot Works
 
-Pixashot uses advanced browser automation technology to capture high-quality screenshots of web pages. Here's a simplified explanation of how it works:
+Pixashot uses advanced browser automation technology to capture high-quality screenshots of web pages. Here's a detailed explanation of its architecture and operation:
 
-1. **Browser Initialization**: Pixashot maintains a pool of headless browser instances using Playwright, a powerful browser automation library.
+### Single-Context Architecture
 
-2. **Page Loading**: When a screenshot request is received, Pixashot loads the specified URL in one of the available browser instances.
+Pixashot uses a single browser context architecture for optimal performance and resource utilization:
 
-3. **Rendering**: The page is fully rendered, including dynamic content and JavaScript-based elements.
+1. **Browser Initialization**:
+    - One Playwright browser instance is launched during startup
+    - Browser extensions (popup blocker, cookie consent blocker) are configured via environment variables
+    - A single browser context is created and maintained throughout the service lifetime
 
-4. **Customization**: Any specified customizations (like viewport size, custom scripts, or CSS) are applied.
+2. **Worker Processes**:
+    - Multiple worker processes handle incoming requests (configurable via `WORKERS`)
+    - Each worker shares the same browser context
+    - Workers are recycled after handling a configured number of requests (`MAX_REQUESTS`)
 
-5. **Capture**: The screenshot is captured according to the specified parameters (full page, element selection, etc.).
+### Screenshot Process
 
-6. **Processing**: The captured image is processed (e.g., converted to the requested format, compressed if needed).
+When a request is received:
 
-7. **Delivery**: The final screenshot is delivered to the client as a response to the API request.
+1. **Page Creation**: A new page is created within the shared browser context.
 
-This process happens rapidly, usually within a few seconds, depending on the complexity of the web page and the requested customizations.
+2. **Page Configuration**:
+    - Viewport size is set
+    - Network conditions are configured
+    - Custom headers are applied if specified
+
+3. **Resource Management**:
+    - Media blocking is applied if requested
+    - Network idle detection is configured
+    - Timeout values are set
+
+4. **Page Loading**:
+    - The URL is loaded or HTML content is rendered
+    - Network conditions are monitored
+    - Dynamic content is handled
+
+5. **Page Customization**:
+    - Custom JavaScript execution
+    - Dark mode application (if requested)
+    - Geolocation spoofing (if specified)
+
+6. **Screenshot Capture**:
+    - Full-page or element-specific capture
+    - Format and quality settings applied
+    - Image processing and optimization
+
+7. **Cleanup**:
+    - Page is closed
+    - Resources are released
+    - Context is maintained for future requests
 
 ## API Overview
 
-Pixashot provides a RESTful API that allows you to easily integrate screenshot capabilities into your applications. The API consists of a single endpoint with various parameters to customize the screenshot capture process.
+Pixashot provides a RESTful API with a single endpoint and comprehensive customization options.
 
 ### Main Endpoint
 
@@ -39,14 +73,15 @@ POST /capture
 
 ### Key Parameters
 
-- `url`: The URL of the web page to capture
+- `url` or `html_content`: Source content to capture
 - `format`: Output format (png, jpeg, webp, pdf)
 - `full_page`: Whether to capture the full scrollable page
-- `viewport_width`: Width of the viewport
-- `viewport_height`: Height of the viewport
-- `delay`: Delay before capture (in milliseconds)
-- `selector`: CSS selector to capture a specific element
-- `custom_js`: Custom JavaScript to execute before capture
+- `window_width`: Width of the viewport
+- `window_height`: Height of the viewport
+- `wait_for_network`: Network idle strategy ("idle" or "mostly_idle")
+- `wait_for_timeout`: Maximum wait time (milliseconds)
+- `custom_js`: Custom JavaScript to execute
+- `selector`: CSS selector for element capture
 
 ### Example Request
 
@@ -55,43 +90,105 @@ POST /capture
   "url": "https://example.com",
   "format": "png",
   "full_page": true,
-  "viewport_width": 1920,
-  "viewport_height": 1080,
-  "delay": 1000,
-  "custom_js": "document.body.style.backgroundColor = 'red';"
+  "window_width": 1280,
+  "window_height": 720,
+  "wait_for_network": "idle",
+  "wait_for_timeout": 8000,
+  "block_media": true
 }
 ```
 
-### Response
+### Environment Configuration
 
-The API responds with the captured screenshot in the requested format, along with appropriate headers.
+Server-wide settings configured through environment variables:
+
+- `USE_POPUP_BLOCKER`: Enable/disable popup blocking
+- `USE_COOKIE_BLOCKER`: Enable/disable cookie consent blocking
+- `RATE_LIMIT_ENABLED`: Enable/disable rate limiting
+- `CACHE_MAX_SIZE`: Enable/disable response caching
 
 ## Request Flow
 
-Understanding the flow of a Pixashot request can help you optimize your usage and troubleshoot any issues. Here's a step-by-step breakdown of what happens when you make a request to Pixashot:
+Here's the complete flow of a Pixashot request:
 
-1. **API Request**: Your application sends a POST request to the `/capture` endpoint with the necessary parameters.
+1. **Request Receipt**:
+    - Worker process accepts the request
+    - Request parameters are validated
+    - Authentication is verified (token or signed URL)
 
-2. **Authentication**: Pixashot verifies the provided authentication token or signed URL.
+2. **Page Preparation**:
+    - New page created in shared context
+    - Viewport and settings configured
+    - Extensions and blockers already active from context
 
-3. **Parameter Validation**: The API validates the request parameters, ensuring all required fields are present and have valid values.
+3. **Content Loading**:
+   ```mermaid
+   graph TD
+     A[Request Received] --> B[Create Page]
+     B --> C[Configure Settings]
+     C --> D[Load Content]
+     D --> E[Wait for Network]
+     E --> F[Execute Custom JS]
+     F --> G[Capture Screenshot]
+     G --> H[Process Image]
+     H --> I[Send Response]
+   ```
 
-4. **Browser Assignment**: Pixashot assigns an available browser instance from its pool to handle the request.
+4. **Resource Management**:
+    - Browser context remains active
+    - Page is properly closed
+    - Memory is managed through worker recycling
 
-5. **Page Navigation**: The browser navigates to the specified URL and waits for the page to load.
+5. **Response Handling**:
+    - Image processing and optimization
+    - Format conversion if needed
+    - Response streaming for large captures
+    - Error handling and reporting
 
-6. **Custom Scripting**: If provided, custom JavaScript is injected and executed on the page.
+### Performance Considerations
 
-7. **Delay**: If a delay is specified, Pixashot waits for the specified duration.
+The single-context architecture provides several benefits:
 
-8. **Screenshot Capture**: The screenshot is captured according to the specified parameters (full page, element selection, etc.).
+1. **Resource Efficiency**:
+    - Shared browser resources
+    - Reduced memory overhead
+    - Faster page creation
 
-9. **Image Processing**: The captured screenshot is processed into the requested format.
+2. **Consistent Behavior**:
+    - Extensions work consistently
+    - Settings persist across requests
+    - Predictable performance
 
-10. **Response**: The final screenshot is sent back to the client as the API response.
+3. **Scalability**:
+    - Worker processes handle concurrency
+    - Context sharing reduces overhead
+    - Efficient resource utilization
 
-11. **Cleanup**: The browser instance is reset and returned to the pool for future requests.
+4. **Limitations**:
+    - Extension settings are server-wide
+    - Context sharing requires careful resource management
+    - Worker recycling needed for memory management
 
-This entire process typically occurs within a few seconds, depending on the complexity of the web page and the specified parameters.
+## Best Practices
 
-Understanding these core concepts will help you use Pixashot more effectively and troubleshoot any issues that may arise. In the next sections, we'll dive deeper into specific features and advanced usage scenarios.
+1. **Resource Optimization**:
+    - Use appropriate `wait_for_network` settings
+    - Enable `block_media` when images aren't needed
+    - Set realistic viewport sizes
+
+2. **Error Handling**:
+    - Implement retry logic with backoff
+    - Monitor request timeouts
+    - Check health endpoints regularly
+
+3. **Performance Tuning**:
+    - Configure worker count based on CPU cores
+    - Set appropriate request limits
+    - Use caching when possible
+
+4. **Security**:
+    - Use HTTPS for all requests
+    - Implement rate limiting
+    - Keep authentication tokens secure
+
+Understanding these core concepts helps you optimize your use of Pixashot and troubleshoot any issues that arise. For more detailed information about specific features, see our [Advanced Usage](advanced-usage.md) and [API Reference](api-reference.md) documentation.
