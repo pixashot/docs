@@ -1,3 +1,10 @@
+---
+title: Pixashot Documentation
+excerpt: Complete documentation for Pixashot, a high-performance web screenshot service with extensive customization options for testing, archiving, and production use cases.
+meta:
+    nav_order: 10
+---
+
 # Pixashot Documentation
 
 Welcome to Pixashot, a high-performance web screenshot service built for reliability and flexibility. Pixashot provides pixel-perfect screenshot capture with extensive customization options, making it ideal for automated testing, content archival, and various production use cases.

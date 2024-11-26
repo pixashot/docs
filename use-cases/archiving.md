@@ -2,7 +2,7 @@
 title: Web Page Archiving Guide
 excerpt: Complete guide for implementing web page archiving with Pixashot, including content preservation, document generation, and metadata handling.
 meta:
-    nav_order: 73
+    nav_order: 133
 ---
 
 # Web Page Archiving

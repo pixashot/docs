@@ -2,7 +2,7 @@
 title: Viewport Configuration
 excerpt: Comprehensive guide to viewport configuration including device simulation, resolution handling, and responsive design testing.
 meta:
-    nav_order: 34
+    nav_order: 54
 ---
 
 # Viewport Configuration

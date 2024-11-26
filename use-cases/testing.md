@@ -2,7 +2,7 @@
 title: Visual Regression Testing Guide
 excerpt: Comprehensive guide for implementing visual regression testing with Pixashot, including CI/CD integration, test frameworks, and comparison strategies.
 meta:
-    nav_order: 72
+    nav_order: 132
 ---
 
 # Visual Regression Testing

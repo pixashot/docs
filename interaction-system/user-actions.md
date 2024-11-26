@@ -2,7 +2,7 @@
 title: User Actions
 excerpt: Guide to simulating user interactions like clicks, typing, and scrolling with Pixashot.
 meta:
-nav_order: 42
+nav_order: 72
 ---
 
 # User Actions

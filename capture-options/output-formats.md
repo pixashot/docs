@@ -2,7 +2,7 @@
 title: Output Format Configuration
 excerpt: Detailed guide to Pixashot's output format options including PNG, JPEG, WebP, PDF, and HTML capture configurations.
 meta:
-    nav_order: 33
+    nav_order: 53
 ---
 
 # Output Format Configuration

@@ -2,7 +2,7 @@
 title: Deploying Pixashot
 excerpt: Overview of Pixashot deployment options, platform comparisons, and choosing the right deployment strategy for your needs.
 meta:
-    nav_order: 60
+    nav_order: 150
 ---
 
 # Deployment Overview

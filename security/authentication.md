@@ -2,7 +2,7 @@
 title: Authentication
 excerpt: Detailed guide to Pixashot's authentication mechanisms, including token-based auth and signed URLs.
 meta:
-    nav_order: 71
+    nav_order: 111
 ---
 
 # Authentication

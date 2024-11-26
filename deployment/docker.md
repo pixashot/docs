@@ -2,7 +2,7 @@
 title: Docker Deployment
 excerpt: Guide to running Pixashot using Docker, including container configuration, resource management, and production deployment strategies.
 meta:
-    nav_order: 62
+    nav_order: 152
 ---
 
 # Docker Deployment Guide

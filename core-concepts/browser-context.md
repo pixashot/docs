@@ -2,7 +2,7 @@
 title: Single Browser Context Architecture
 excerpt: Deep dive into Pixashot's shared browser context architecture, including resource management, extension handling, and performance implications.
 meta:
-    nav_order: 21
+    nav_order: 31
 ---
 
 # Browser Context Architecture

@@ -2,7 +2,7 @@
 title: Configuring Pixashot
 excerpt: Complete guide to configuring Pixashot through environment variables and runtime options.
 meta:
-    nav_order: 40
+    nav_order: 23
 ---
 
 # Configuring Pixashot

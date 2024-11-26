@@ -2,7 +2,7 @@
 title: Security Best Practices
 excerpt: Essential security guidelines and recommendations for deploying and maintaining Pixashot in production environments.
 meta:
-    nav_order: 73
+    nav_order: 113
 ---
 
 # Security Best Practices

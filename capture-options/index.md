@@ -2,7 +2,7 @@
 title: Screenshot Capture Options
 excerpt: Overview of Pixashot's screenshot capabilities, from basic captures to advanced customization features.
 meta:
-  nav_order: 30
+  nav_order: 50
 ---
 
 # Screenshot Capture Options

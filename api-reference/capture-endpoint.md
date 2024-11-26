@@ -2,7 +2,7 @@
 title: Capture Endpoint
 excerpt: Detailed documentation for Pixashot's main screenshot capture endpoint, including request examples and error handling.
 meta:
-    nav_order: 71
+    nav_order: 91
 ---
 
 # Capture Endpoint

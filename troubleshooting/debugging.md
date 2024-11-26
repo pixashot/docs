@@ -2,7 +2,7 @@
 title: Debugging Guide
 excerpt: Tools and techniques for debugging Pixashot issues, including diagnostic tools, logging configuration, and troubleshooting procedures.
 meta:
-    nav_order: 92
+    nav_order: 172
 ---
 
 # Debugging Guide

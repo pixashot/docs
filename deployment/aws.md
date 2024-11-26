@@ -2,7 +2,7 @@
 title: AWS Deployment
 excerpt: Complete guide to deploying Pixashot on Amazon Web Services, including ECS/Fargate setup, monitoring, and AWS-specific optimizations.
 meta:
-  nav_order: 63
+  nav_order: 153
 ---
 
 # AWS Deployment Guide

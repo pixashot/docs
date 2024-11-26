@@ -2,7 +2,7 @@
 title: Wait Strategies
 excerpt: Comprehensive guide to Pixashot's wait strategies for handling dynamic content and network activity.
 meta:
-nav_order: 41
+nav_order: 71
 ---
 
 # Wait Strategies

@@ -2,7 +2,7 @@
 title: Troubleshooting Guide
 excerpt: Overview of common problems and solutions when using Pixashot, including diagnostic tools and debugging procedures.
 meta:
-    nav_order: 90
+    nav_order: 170
 ---
 
 # Troubleshooting Pixashot

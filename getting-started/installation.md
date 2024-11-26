@@ -2,7 +2,7 @@
 title: Installing Pixashot
 excerpt: Step-by-step installation guide for deploying Pixashot using Docker or Google Cloud Run.
 meta:
-    nav_order: 20
+    nav_order: 22
 ---
 
 # Installing Pixashot

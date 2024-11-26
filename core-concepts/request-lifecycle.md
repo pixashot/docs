@@ -2,7 +2,7 @@
 title: Request Lifecycle
 excerpt: Detailed examination of how Pixashot processes screenshot requests, from initial validation through to response delivery.
 meta:
-    nav_order: 22
+    nav_order: 32
 ---
 
 # Request Lifecycle

@@ -2,7 +2,7 @@
 title: Frequently Asked Questions
 excerpt: Common questions and answers about Pixashot usage, configuration, deployment, and troubleshooting.
 meta:
-    nav_order: 93
+    nav_order: 173
 ---
 
 # Frequently Asked Questions

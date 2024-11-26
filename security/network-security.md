@@ -2,7 +2,7 @@
 title: Network Security
 excerpt: Comprehensive guide to configuring HTTPS, proxies, and network security features in Pixashot.
 meta:
-    nav_order: 72
+    nav_order: 112
 ---
 
 # Network Security

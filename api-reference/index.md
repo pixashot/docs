@@ -2,7 +2,7 @@
 title: API Reference
 excerpt: Complete API reference documentation for Pixashot, including authentication, endpoints, error handling, and rate limiting.
 meta:
-    nav_order: 70
+    nav_order: 90
 ---
 
 # API Reference
