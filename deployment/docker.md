@@ -364,9 +364,9 @@ docker exec -it pixashot /bin/bash
 
 ## Next Steps
 
-- Set up [monitoring](../deployment/monitoring.md)
-- Configure [logging](../deployment/logging.md)
+- Set up [monitoring](cloud-run.md)
+- Configure [logging](logging.md)
 - Review [security best practices](../security/index.md)
-- Implement [rate limiting](../features/rate-limiting.md)
+- Implement [rate limiting](../api-reference/rate-limiting.md)
 
-For more information, refer to the [API Reference](../api-reference/index.md) and [Feature Documentation](../features/index.md).
+For more information, refer to the [API Reference](../api-reference/index.md) and [Feature Documentation](../api-reference/index.md).

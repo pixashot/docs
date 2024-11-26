@@ -1,218 +1,320 @@
 ---
 title: Deploying Pixashot
-excerpt: Overview of Pixashot deployment options, platform comparisons, and choosing the right deployment strategy for your needs.
+excerpt: Comprehensive guide to Pixashot deployment options, platform comparisons, and deployment strategy selection.
 meta:
-    nav_order: 150
+  nav_order: 150
 ---
 
 # Deployment Overview
 
-Pixashot offers flexible deployment options to suit different scales and requirements. This guide helps you choose the right deployment strategy and understand the implications of each option.
+## Quick Platform Comparison
 
-## Deployment Options
+| Feature | Google Cloud Run | Docker Self-Hosted | AWS ECS/Fargate | Azure Container Apps |
+|---------|-----------------|-------------------|------------------|---------------------|
+| Management Overhead | Minimal | High | Medium | Medium |
+| Auto-scaling | Yes | Manual | Yes | Yes |
+| Cost Model | Pay-per-use | Fixed + Variable | Pay-per-use | Pay-per-use |
+| Cold Starts | Yes | No | No | Yes |
+| Max Memory | 32GB | Unlimited | 120GB | 32GB |
+| Setup Complexity | Low | High | Medium | Low |
+| Monitoring | Built-in | Manual | Built-in | Built-in |
+| Offline Support | No | Yes | No | No |
+
+## Platform Deep Dives
 
 ### Google Cloud Run (Recommended)
-- **Best for**: Most users, from small to large scale
-- **Advantages**:
-    - Zero infrastructure management
-    - Automatic scaling
-    - Pay-per-use pricing
-    - Built-in monitoring
-    - Global deployment options
-- **Considerations**:
-    - Cold starts on free tier
-    - Regional availability
-    - Memory limits (up to 32GB)
+```bash
+# Basic deployment
+gcloud run deploy pixashot \
+  --image gpriday/pixashot:latest \
+  --memory 2Gi \
+  --cpu 1 \
+  --min-instances 1 \
+  --max-instances 10
+```
 
-### Docker
-- **Best for**: Local development and self-hosted environments
-- **Advantages**:
-    - Complete control
-    - No vendor lock-in
-    - Local development ease
-    - Predictable costs
-- **Considerations**:
-    - Manual scaling
-    - Infrastructure management required
-    - More operational overhead
+#### Ideal Use Cases
+- Most production deployments
+- Variable traffic patterns
+- Cost-sensitive deployments
+- Global distribution needs
+- Serverless preferences
+
+#### Key Benefits
+- Zero infrastructure management
+- Automatic scaling
+- Pay-per-use pricing
+- Built-in monitoring
+- Global deployment options
+- Easy integration with other GCP services
+
+#### Limitations
+- Cold starts (mitigatable)
+- 32GB memory limit
+- Regional deployment required
+- No persistent storage
+
+### Docker Self-Hosted
+```bash
+# Production deployment example
+docker run -d \
+  --name pixashot \
+  --memory=4g \
+  --cpus=2 \
+  --restart=unless-stopped \
+  -e AUTH_TOKEN=${AUTH_TOKEN} \
+  -e WORKERS=4 \
+  -p 8080:8080 \
+  gpriday/pixashot:latest
+```
+
+#### Ideal Use Cases
+- Local development
+- Air-gapped environments
+- Complete control requirements
+- Existing infrastructure
+- Specific compliance needs
+
+#### Key Benefits
+- Complete control
+- No vendor lock-in
+- Predictable costs
+- Offline capability
+- Custom hardware options
+- Direct resource access
+
+#### Limitations
+- Manual scaling
+- Infrastructure management
+- Operational overhead
+- Self-managed security
+- Manual monitoring setup
 
 ### AWS ECS/Fargate
-- **Best for**: AWS-integrated environments
-- **Advantages**:
-    - AWS ecosystem integration
-    - Flexible scaling options
-    - Regional availability
-    - Rich monitoring tools
-- **Considerations**:
-    - Higher complexity
-    - Cost management needed
-    - Infrastructure setup required
+```bash
+# Task definition example
+{
+  "family": "pixashot",
+  "containerDefinitions": [{
+    "name": "pixashot",
+    "image": "gpriday/pixashot:latest",
+    "memory": 2048,
+    "cpu": 1024,
+    "essential": true,
+    "portMappings": [{
+      "containerPort": 8080,
+      "protocol": "tcp"
+    }],
+    "environment": [{
+      "name": "AUTH_TOKEN",
+      "value": "your_secret_token"
+    }]
+  }]
+}
+```
 
-### Azure Container Instances
-- **Best for**: Azure-integrated environments
-- **Advantages**:
-    - Azure ecosystem integration
-    - Simple deployment
-    - Good monitoring tools
-    - Regional availability
-- **Considerations**:
-    - Limited scaling options
-    - Cost optimization needed
-    - Resource limits
+#### Ideal Use Cases
+- AWS-integrated systems
+- Complex networking needs
+- Regional deployment requirements
+- High availability needs
+- Existing AWS expertise
 
-## Resource Requirements
+#### Key Benefits
+- AWS ecosystem integration
+- Flexible scaling
+- Rich monitoring
+- VPC integration
+- Route 53 integration
+- Load balancer integration
 
-### Minimum Requirements
+#### Limitations
+- Setup complexity
+- Cost management needs
+- AWS knowledge required
+- Initial configuration time
+
+### Azure Container Apps
+```bash
+# Basic deployment
+az containerapp create \
+  --name pixashot \
+  --resource-group mygroup \
+  --image gpriday/pixashot:latest \
+  --target-port 8080 \
+  --ingress external \
+  --cpu 1.0 \
+  --memory 2.0Gi
+```
+
+#### Ideal Use Cases
+- Azure-integrated systems
+- Simple deployment needs
+- Microsoft ecosystem
+- Existing Azure expertise
+
+#### Key Benefits
+- Azure ecosystem integration
+- Simple deployment
+- Built-in monitoring
+- Azure DevOps integration
+- Key Vault integration
+
+#### Limitations
+- Scale limitations
+- Cost optimization needs
+- Regional constraints
+- Cold start impact
+
+## Resource Planning
+
+### Development Environment
+```bash
+Minimum Requirements:
 - CPU: 1 core
 - RAM: 2GB
 - Storage: 1GB
-- Network: Reliable internet connection
+- Network: Basic internet
+```
 
-### Recommended Production Requirements
+### Production Environment
+```bash
+Recommended Requirements:
 - CPU: 2+ cores
 - RAM: 4GB+
 - Storage: 5GB+
-- Network: Low-latency connection
-
-### Scaling Factors
-- Number of concurrent users
-- Screenshot frequency
-- Page complexity
-- Output format requirements
-- Caching needs
-
-## Cost Considerations
-
-### Google Cloud Run
-- Free tier includes:
-    - 2 million requests/month
-    - 360,000 vCPU-seconds
-    - 180,000 GiB-seconds
-- Beyond free tier:
-    - $0.00002400/vCPU-second
-    - $0.00000250/GiB-second
-    - $0.40/million requests
-
-### Self-Hosted Docker
-- Server costs
-- Maintenance overhead
-- Monitoring costs
-- Backup costs
-- Network transfer
-
-### AWS
-- Container service costs
-- Load balancer costs
-- Network transfer
-- Monitoring costs
-- Storage costs
-
-### Azure
-- Container instance costs
-- Network transfer
-- Monitoring costs
-- Storage costs
-
-## Platform Selection Guide
-
-### Choose Google Cloud Run if:
-- You want minimal management overhead
-- Your usage patterns are irregular
-- You need automatic scaling
-- Cost optimization is important
-- You want easy deployment
-
-### Choose Docker Self-Hosted if:
-- You need complete control
-- You have existing infrastructure
-- You have specific compliance requirements
-- You want predictable costs
-- You need offline capabilities
-
-### Choose AWS if:
-- You're heavily invested in AWS
-- You need AWS-specific features
-- You want regional deployment
-- You need complex auto-scaling
-- You use other AWS services
-
-### Choose Azure if:
-- You're heavily invested in Azure
-- You need Azure-specific features
-- You want simple container deployment
-- You use other Azure services
-
-## Common Pitfalls and Solutions
-
-### Resource Allocation
-**Pitfall**: Underestimating memory requirements
-**Solution**:
-- Start with at least 2GB RAM
-- Monitor memory usage
-- Set appropriate limits
-- Use scaling rules
-
-### Cold Starts
-**Pitfall**: Slow initial responses
-**Solution**:
-- Configure minimum instances
-- Use warm-up endpoints
-- Implement caching
-- Optimize startup time
-
-### Cost Management
-**Pitfall**: Unexpected costs
-**Solution**:
-- Set up budget alerts
-- Monitor usage patterns
-- Implement auto-scaling limits
-- Use cost optimization tools
-
-### Network Issues
-**Pitfall**: Timeouts and failures
-**Solution**:
-- Configure appropriate timeouts
-- Implement retry logic
-- Use health checks
-- Monitor network metrics
-
-### Security Configuration
-**Pitfall**: Exposed services
-**Solution**:
-- Use authentication tokens
-- Configure network policies
-- Implement rate limiting
-- Regular security audits
-
-## Health Monitoring
-
-Every deployment should include:
-
-1. **Basic Health Checks**
-```bash
-curl http://your-instance/health/live
-curl http://your-instance/health/ready
+- Network: Low-latency
 ```
 
-2. **Resource Monitoring**
-- CPU usage
-- Memory usage
-- Network traffic
-- Request latency
+### High-Traffic Environment
+```bash
+Enterprise Requirements:
+- CPU: 4+ cores
+- RAM: 8GB+
+- Storage: 10GB+
+- Network: High bandwidth
+```
 
-3. **Alert Configuration**
-- Error rate thresholds
-- Resource utilization
-- Response time
-- System availability
+## Cost Optimization Strategies
+
+### Free Tier Maximization
+1. **Google Cloud Run**
+  - 2M requests/month free
+  - Optimize instance count
+  - Use minimum instances wisely
+  - Monitor cold starts
+
+2. **AWS Fargate**
+  - Use Spot instances
+  - Implement auto-scaling
+  - Optimize task size
+  - Use Application Load Balancer
+
+3. **Azure Container Apps**
+  - Use consumption plan
+  - Optimize scaling rules
+  - Monitor instance usage
+  - Use reserved instances
+
+### Cost Control Measures
+```bash
+# Example budget alert (GCP)
+gcloud billing budgets create \
+  --billing-account=$BILLING_ACCOUNT_ID \
+  --display-name="Pixashot Budget" \
+  --budget-amount=100 \
+  --threshold-rule=percent=80
+```
+
+## Deployment Checklist
+
+### Pre-Deployment
+- [ ] Choose deployment platform
+- [ ] Calculate resource requirements
+- [ ] Plan monitoring strategy
+- [ ] Set up security measures
+- [ ] Configure backup strategy
+
+### Deployment
+- [ ] Set up authentication
+- [ ] Configure networking
+- [ ] Set resource limits
+- [ ] Enable monitoring
+- [ ] Configure scaling rules
+
+### Post-Deployment
+- [ ] Verify health checks
+- [ ] Test performance
+- [ ] Monitor resources
+- [ ] Set up alerts
+- [ ] Document deployment
+
+## Common Issues & Solutions
+
+### Performance Optimization
+```bash
+# Example monitoring setup (Docker)
+docker stats pixashot --format \
+  "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}"
+```
+
+#### Memory Issues
+- Monitor usage patterns
+- Set appropriate limits
+- Implement cleanup routines
+- Use proper scaling rules
+
+#### Network Issues
+- Configure timeouts
+- Implement retry logic
+- Use health checks
+- Monitor latency
+
+#### Security Concerns
+- Implement authentication
+- Configure network policies
+- Enable rate limiting
+- Regular security audits
+
+## Monitoring Setup
+
+### Health Endpoints
+```bash
+# Basic health monitoring
+curl http://your-instance/health/live
+curl http://your-instance/health/ready
+curl http://your-instance/health/metrics
+```
+
+### Key Metrics
+1. **System Health**
+  - CPU utilization
+  - Memory usage
+  - Disk I/O
+  - Network traffic
+
+2. **Application Metrics**
+  - Request latency
+  - Error rates
+  - Success rates
+  - Queue length
+
+3. **Business Metrics**
+  - Capture success rate
+  - Processing time
+  - Cache hit ratio
+  - Cost per capture
 
 ## Next Steps
 
-Based on your deployment choice:
-- [Google Cloud Run Deployment Guide](cloud-run.md)
-- [Docker Deployment Guide](docker.md)
-- [AWS Deployment Guide](aws.md)
-- [Azure Deployment Guide](azure.md)
-- [Scaling Guide](scaling.md)
+### Platform-Specific Guides
+- [Google Cloud Run Deployment](cloud-run.md)
+- [Docker Self-Hosted Guide](docker.md)
+- [AWS ECS/Fargate Setup](aws.md)
+- [Azure Container Apps Guide](azure.md)
 
-Each platform has its own considerations and best practices. Choose the one that best fits your needs and follow the respective deployment guide.
+### Additional Resources
+- [Scaling Strategies](scaling.md)
+- [Security Configuration](../security/index.md)
+- [Monitoring Setup](../deployment/cloud-run.md#monitoring)
+- [Resource Management](../core-concepts/resource-management.md)

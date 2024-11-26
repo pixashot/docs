@@ -334,7 +334,7 @@ Key metrics are recorded:
 ## Next Steps
 
 - Learn about [Resource Management](resource-management.md)
-- Explore [Advanced Features](../features/advanced-features.md)
+- Explore [Advanced Features](../api-reference/request-options.md)
 - Understand [Error Handling](../troubleshooting/debugging.md)
 
 Understanding the request lifecycle is crucial for:

@@ -305,7 +305,7 @@ curl http://localhost:8080/health | grep cache_size
 After configuration:
 1. Review [Best Practices](best-practices.md) for optimization tips
 2. Check [Security](../security/index.md) for security hardening
-3. Configure [Monitoring](../deployment/monitoring.md)
-4. Set up [Error Handling](../api-reference/error-handling.md)
+3. Configure [Monitoring](cloud-run.md)
+4. Set up [Error Handling](../api-reference/response-handling.md)
 
 For deployment-specific configurations, see our [Deployment Guide](../deployment/index.md).

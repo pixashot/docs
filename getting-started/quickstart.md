@@ -286,7 +286,7 @@ Once you're comfortable with basic captures:
 
 1. Review [Configuration](configuration.md) for detailed settings
 2. Check [Best Practices](best-practices.md) for optimization
-3. Explore [Advanced Features](../features/advanced-features.md)
-4. Setup proper [Error Handling](../api-reference/error-handling.md)
+3. Explore [Advanced Features](../api-reference/request-options.md)
+4. Setup proper [Error Handling](../api-reference/response-handling.md)
 
 For more detailed API information, visit our [API Reference](../api-reference/index.md).

@@ -2,60 +2,95 @@
 title: Pixashot Documentation
 excerpt: Complete documentation for Pixashot, a high-performance web screenshot service with extensive customization options for testing, archiving, and production use cases.
 meta:
-    nav_order: 10
+  nav_order: 10
 ---
 
 # Pixashot Documentation
 
-Welcome to Pixashot, a high-performance web screenshot service built for reliability and flexibility. Pixashot provides pixel-perfect screenshot capture with extensive customization options, making it ideal for automated testing, content archival, and various production use cases.
+Welcome to Pixashot, a high-performance web screenshot service built for reliability and flexibility. Whether you're capturing screenshots for automated testing, content archival, or production applications, this documentation will help you make the most of Pixashot's capabilities.
+
+## Quick Navigation
+
+- 🚀 [Quick Start Guide](getting-started/quickstart.md) - Take your first screenshot in minutes
+- 🎓 [Core Concepts](core-concepts/index.md) - Understand Pixashot's architecture
+- 📚 [API Reference](api-reference/index.md) - Complete API documentation
+- 🔧 [Troubleshooting](troubleshooting/index.md) - Solve common issues
+
+## Learning Paths
+
+### For First-Time Users
+1. [Installation Guide](getting-started/installation.md)
+2. [Quick Start Tutorial](getting-started/quickstart.md)
+3. [Basic Configuration](getting-started/configuration.md)
+4. [Common Use Cases](use-cases/index.md)
+
+### For Developers
+1. [Core Concepts](core-concepts/index.md)
+2. [API Reference](api-reference/index.md)
+3. [Client Libraries](code-examples/index.md)
+4. [Advanced Features](capture-options/advanced-capture.md)
+
+### For DevOps
+1. [Deployment Overview](deployment/index.md)
+2. [Security Guide](security/index.md)
+3. [Resource Management](core-concepts/resource-management.md)
+4. [Monitoring Setup](deployment/cloud-run.md)
 
 ## What is Pixashot?
 
-Pixashot is a containerized web screenshot service that uses modern browser automation to capture high-quality screenshots. It's designed with a single-context architecture for optimal performance and resource utilization, making it suitable for both small-scale deployments and high-traffic production environments.
+Pixashot is a containerized web screenshot service that leverages modern browser automation for high-quality captures. Its unique single-context architecture ensures optimal performance and resource utilization, making it suitable for deployments of any scale.
 
 ### Key Features
 
 #### Core Capabilities
-- **High-Fidelity Capture**: Pixel-perfect screenshots at any resolution, including Retina displays
-- **Multiple Formats**: Support for PNG, JPEG, WebP, PDF, and HTML output
-- **Flexible Viewports**: Custom viewport sizes with configurable pixel density
-- **Full Page Support**: Intelligent capture of scrollable content with dynamic height detection
-- **Element Selection**: Capture specific page elements using CSS selectors
+- **High-Fidelity Capture**: Pixel-perfect screenshots with support for Retina displays
+- **Multiple Formats**: PNG, JPEG, WebP, PDF, and HTML output
+- **Flexible Viewports**: Custom sizes and pixel density
+- **Full Page Support**: Intelligent scrollable content capture
+- **Element Selection**: Target specific page elements
 
 #### Advanced Features
-- **Single Browser Context**: Efficient resource sharing and consistent performance
-- **Dark Mode Support**: Accurate dark mode simulation and capture
-- **Geolocation Spoofing**: Precise location simulation for testing
-- **Custom JavaScript**: Inject and execute custom JavaScript before capture
-- **Interaction Sequences**: Programmable clicks, typing, and navigation actions
-- **Dynamic Content**: Smart waiting for dynamic content and animations
+- **Single Browser Context**: [Learn more](core-concepts/browser-context.md)
+    - Efficient resource sharing
+    - Consistent performance
+    - Optimized memory usage
+    - Reliable extension handling
 
-#### Performance & Reliability
-- **Resource Optimization**: Smart browser instance pooling and memory management
-- **Response Caching**: Optional caching for repeated captures (configurable)
-- **Rate Limiting**: Configurable request throttling
-- **Health Monitoring**: Built-in health checks and performance metrics
-- **Error Recovery**: Automatic cleanup and recovery from failed captures
+- **Dynamic Content Handling**: [Learn more](interaction-system/dynamic-content.md)
+    - Smart content waiting
+    - Animation handling
+    - Network state detection
+    - Custom timing controls
 
-#### Security
-- **Authentication**: Token-based authentication and signed URLs
-- **Network Security**: HTTPS support and proxy configuration
-- **Resource Protection**: Memory and CPU limits with automatic cleanup
-- **Input Validation**: Comprehensive request validation and sanitization
+- **Interaction Support**: [Learn more](interaction-system/user-actions.md)
+    - Programmable clicks
+    - Form interactions
+    - Navigation sequences
+    - Custom JavaScript execution
 
-## Quick Start
+#### Performance & Security
+- **Resource Management**: [Learn more](core-concepts/resource-management.md)
+    - Smart memory handling
+    - Automatic cleanup
+    - Response caching
+    - Rate limiting
 
-The fastest way to get started with Pixashot is using Docker:
+- **Security Features**: [Learn more](security/index.md)
+    - Token authentication
+    - HTTPS support
+    - Resource protection
+    - Input validation
 
+## Getting Started
+
+### Quick Start with Docker
 ```bash
 # Launch Pixashot
 docker run -p 8080:8080 \
   -e AUTH_TOKEN=your_secret_token \
-  -e USE_POPUP_BLOCKER=true \
-  -e USE_COOKIE_BLOCKER=true \
   gpriday/pixashot:latest
 
-# Take your first screenshot
+# Take a screenshot
 curl -X POST http://localhost:8080/capture \
   -H "Authorization: Bearer your_secret_token" \
   -H "Content-Type: application/json" \
@@ -66,87 +101,112 @@ curl -X POST http://localhost:8080/capture \
   }'
 ```
 
-## Production Deployment
-
-For production deployments, we recommend Google Cloud Run:
-
+### Production Deployment
+For production environments, we recommend Google Cloud Run:
 ```bash
 gcloud run deploy pixashot \
   --image gpriday/pixashot:latest \
   --platform managed \
-  --region us-central1 \
   --memory 2Gi \
   --cpu 1 \
   --timeout 300 \
   --set-env-vars="AUTH_TOKEN=your_secret_token"
 ```
 
-Cloud Run provides:
-- Automatic scaling
-- Zero management overhead
-- Pay-per-use pricing
-- Global deployment options
-- Built-in monitoring and logging
-
-## Common Use Cases
-
-Pixashot is used across various industries for:
-
-- **Visual Testing**: Automated UI validation and regression testing
-- **Content Archiving**: High-fidelity web page preservation
-- **E-commerce**: Product image and listing capture
-- **Social Media**: Dynamic preview generation
-- **Documentation**: Technical documentation screenshots
-- **SEO Monitoring**: Visual change tracking
-- **Legal Compliance**: Document preservation and verification
-- **Content Moderation**: Visual content review automation
+[Learn more about deployment options](deployment/index.md)
 
 ## System Requirements
 
-Minimum requirements for running Pixashot:
-- CPU: 1 core (2+ recommended for production)
-- RAM: 2GB minimum (4GB+ recommended for production)
-- Storage: 1GB for installation
-- Operating System: Any Docker-compatible OS
+| Environment | CPU | RAM | Storage |
+|-------------|-----|-----|----------|
+| Development | 1 core | 2GB | 1GB |
+| Production | 2+ cores | 4GB+ | 5GB+ |
+| High Traffic | 4+ cores | 8GB+ | 10GB+ |
+
+[Detailed requirements guide](getting-started/installation.md#system-requirements)
+
+## Documentation Structure
+
+### Core Documentation
+- **[Getting Started](getting-started/index.md)**
+    - Installation and setup
+    - Basic configuration
+    - Quick start guide
+    - Best practices
+
+- **[Core Concepts](core-concepts/index.md)**
+    - Architecture overview
+    - Browser context
+    - Request lifecycle
+    - Resource management
+
+- **[Capture Options](capture-options/index.md)**
+    - Basic captures
+    - Advanced features
+    - Output formats
+    - Viewport settings
+
+### Advanced Topics
+- **[Interaction System](interaction-system/index.md)**
+    - User actions
+    - Dynamic content
+    - Wait strategies
+
+- **[Deployment](deployment/index.md)**
+    - Platform guides
+    - Scaling strategies
+    - Monitoring setup
+
+- **[Security](security/index.md)**
+    - Authentication
+    - Network security
+    - Best practices
+
+### Reference & Support
+- **[API Reference](api-reference/index.md)**
+    - Endpoints
+    - Request options
+    - Response handling
+    - Rate limiting
+
+- **[Code Examples](code-examples/index.md)**
+    - Python
+    - Node.js
+    - PHP
+    - Other languages
+
+- **[Use Cases](use-cases/index.md)**
+    - E-commerce
+    - Testing
+    - Archiving
+
+- **[Troubleshooting](troubleshooting/index.md)**
+    - Common issues
+    - Debugging guide
+    - FAQ
 
 ## Cost Efficiency
 
-When deployed on Google Cloud Run, most users stay within the free tier:
+Most users stay within Google Cloud Run's free tier:
 - 2 million requests/month included
 - 360,000 vCPU-seconds
 - 180,000 GiB-seconds
-- Pay only for what you use beyond free tier
 
-## Documentation Overview
+[Learn more about pricing and optimization](deployment/index.md#cost-considerations)
 
-Our documentation is organized into the following sections:
+## Support & Community
 
-- [Getting Started](getting-started/): Installation, configuration, and basic usage
-- [Core Concepts](core-concepts/): Architecture, browser context, and request lifecycle
-- [Capture Options](capture-options/): Screenshot customization and output formats
-- [Interaction System](interaction-system/): Page interactions and dynamic content handling
-- [Deployment](deployment/): Deployment guides and scaling considerations
-- [Security](security/): Authentication, network security, and best practices
-- [API Reference](api-reference/): Complete API documentation
-- [Client Libraries](client-libraries/): Official and community client implementations
-- [Use Cases](use-cases/): Common implementation patterns
-- [Troubleshooting](troubleshooting/): Common issues and solutions
+- **[GitHub Issues](https://github.com/pixashot/pixashot/issues)**: Bug reports and feature requests
+- **[GitHub Discussions](https://github.com/pixashot/pixashot/discussions)**: Community discussions
+- **[Email Support](mailto:support@pixashot.com)**: Direct assistance
+- **[Stack Overflow](https://stackoverflow.com/questions/tagged/pixashot)**: Community Q&A
 
-## Support and Community
+## License & Acknowledgements
 
-- **Documentation**: You're here! Browse the sections above for detailed information
-- **Issue Tracking**: Report issues on [GitHub Issues](https://github.com/pixashot/pixashot/issues)
-- **Feature Requests**: Discuss new features on [GitHub Discussions](https://github.com/pixashot/pixashot/discussions)
-- **Email Support**: Contact us at [support@pixashot.com](mailto:support@pixashot.com)
+Pixashot is open source software licensed under the MIT license and built with:
+- [Playwright](https://playwright.dev/) - Browser automation
+- [Quart](https://quart.palletsprojects.com/) - Async web framework
+- [PopUpOFF](https://github.com/AdguardTeam/PopUpOFF) - Popup blocking
+- [I don't care about cookies](https://www.i-dont-care-about-cookies.eu/) - Cookie handling
 
-## Acknowledgements
-
-Pixashot is built with powerful open source technologies:
-- [Playwright](https://playwright.dev/) for reliable browser automation
-- [Quart](https://quart.palletsprojects.com/) for async web framework
-- [PopUpOFF](https://github.com/AdguardTeam/PopUpOFF) for popup blocking
-- [I don't care about cookies](https://www.i-dont-care-about-cookies.eu/) for cookie notice handling
-
-## License
-
-Pixashot is open source software licensed under the MIT license. See the [LICENSE](https://github.com/pixashot/pixashot/blob/main/LICENSE) file for more details.
+[View License](https://github.com/pixashot/pixashot/blob/main/LICENSE)

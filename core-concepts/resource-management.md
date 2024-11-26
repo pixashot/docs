@@ -326,8 +326,8 @@ async def cleanup_resources(self):
 ## Next Steps
 
 - Learn about [Performance Optimization](../deployment/scaling.md)
-- Understand [Monitoring](../deployment/monitoring.md)
-- Explore [Advanced Features](../features/advanced-features.md)
+- Understand [Monitoring](cloud-run.md)
+- Explore [Advanced Features](../api-reference/request-options.md)
 
 Effective resource management is crucial for:
 - Reliable operation

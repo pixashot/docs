@@ -343,4 +343,4 @@ curl -X POST $SERVICE_URL/capture \
 - Review [security best practices](../security/index.md)
 - Set up [cost alerts](https://cloud.google.com/billing/docs/how-to/budgets)
 
-For more information about specific features or configurations, refer to the [API Reference](../api-reference/index.md) and [Feature Documentation](../features/index.md).
+For more information about specific features or configurations, refer to the [API Reference](../api-reference/index.md) and [Feature Documentation](../api-reference/index.md).

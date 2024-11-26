@@ -164,4 +164,4 @@ Key metrics to track:
     - Enable caching
     - Monitor response times
 
-For detailed monitoring configuration, see the [Monitoring Guide](monitoring.md).
+For detailed monitoring configuration, see the [Monitoring Guide](cloud-run.md).
