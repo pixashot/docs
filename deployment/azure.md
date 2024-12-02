@@ -355,4 +355,4 @@ curl -X POST https://$APP_URL/capture \
 - Review [security best practices](../security/index.md)
 - Set up [cost alerts](https://docs.microsoft.com/en-us/azure/cost-management-billing/costs/cost-mgt-alerts-monitor-usage-spending)
 
-For more information about specific features or configurations, refer to the [API Reference](../api-reference/index.md) and [Feature Documentation](../features.md).
+For more information about specific features or configurations, refer to the [API Reference](../api-reference/index.md) and [Feature Documentation](../api-reference/index.md).

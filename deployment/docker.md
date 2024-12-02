@@ -365,7 +365,7 @@ docker exec -it pixashot /bin/bash
 ## Next Steps
 
 - Set up [monitoring](cloud-run.md)
-- Configure [logging](logging.md)
+- Configure [logging](cloud-run.md#logging)
 - Review [security best practices](../security/index.md)
 - Implement [rate limiting](../api-reference/rate-limiting.md)
 

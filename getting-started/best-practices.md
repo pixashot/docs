@@ -366,7 +366,7 @@ Regularly test:
 
 After implementing these best practices:
 1. Set up [Monitoring](cloud-run.md)
-2. Configure [Alerts](../deployment/monitoring.md#alerts)
+2. Configure [Alerts](../deployment/cloud-run.md#monitoring#alerts)
 3. Review [Security](../security/index.md)
 4. Plan [Scaling](../deployment/scaling.md)
 

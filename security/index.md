@@ -85,7 +85,6 @@ export RATE_LIMIT_CAPTURE="5 per second"
 - Set up [Authentication](authentication.md)
 - Configure [Network Security](network-security.md)
 - Review [Security Best Practices](best-practices.md)
-- Implement [Monitoring](cloud-run.md)
 
 ## Additional Resources
 

@@ -300,5 +300,5 @@ gcloud run services update-traffic pixashot --to-revisions=STABLE=100  # Rollbac
 
 3. **Monitoring Setup**
     - [Monitoring Configuration](../deployment/cloud-run.md#monitoring)
-    - [Alert Configuration](../deployment/cloud-run.md#alerting)
+    - [Alert Configuration](../deployment/cloud-run.md#monitoring)
     - [Log Management](../deployment/cloud-run.md#logging)
