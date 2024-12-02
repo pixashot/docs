@@ -9,7 +9,7 @@ meta:
 
 ## Architecture Overview
 
-Pixashot's architecture is built around a unique single-context model that maximizes performance and resource efficiency. Here's how the system fits together:
+Pixashot's architecture is built around a single-context model that maximizes performance and resource efficiency. Here's how the system fits together:
 
 ```mermaid
 graph TD
