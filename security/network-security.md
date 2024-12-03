@@ -98,4 +98,4 @@ def security_headers(response):
 
 - Review [Security Best Practices](best-practices.md)
 - Configure [Authentication](authentication.md)
-- Set up [Monitoring](cloud-run.md)
+- Set up [Monitoring](../deployment/cloud-run.md)

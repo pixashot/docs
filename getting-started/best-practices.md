@@ -365,7 +365,7 @@ Regularly test:
 ## Next Steps
 
 After implementing these best practices:
-1. Set up [Monitoring](cloud-run.md)
+1. Set up [Monitoring](../deployment/cloud-run.md)
 2. Configure [Alerts](../deployment/cloud-run.md#monitoring#alerts)
 3. Review [Security](../security/index.md)
 4. Plan [Scaling](../deployment/scaling.md)

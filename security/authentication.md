@@ -132,4 +132,4 @@ Status codes:
 
 - Configure [Network Security](network-security.md)
 - Review [Best Practices](best-practices.md)
-- Set up [Monitoring](cloud-run.md)
+- Set up [Monitoring](../deployment/cloud-run.md)
