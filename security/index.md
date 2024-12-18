@@ -1,5 +1,5 @@
 ---
-title: Pixashot Security Overview
+title: Security Overview
 excerpt: Introduction to Pixashot's security architecture, features, and implementation guidelines.
 meta:
   nav_order: 110
