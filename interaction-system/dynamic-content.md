@@ -2,7 +2,7 @@
 title: Dynamic Content
 excerpt: Strategies for handling dynamic web content, JavaScript-rendered elements, and single-page applications.
 meta:
-nav_order: 73
+  nav_order: 73
 ---
 
 # Dynamic Content

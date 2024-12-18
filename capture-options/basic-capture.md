@@ -2,7 +2,7 @@
 title: Basic Screenshot Options
 excerpt: Guide to essential screenshot capture features including full page captures, element selection, and basic wait strategies.
 meta:
-    nav_order: 51
+  nav_order: 51
 ---
 
 # Basic Screenshot Options

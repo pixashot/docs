@@ -2,7 +2,7 @@
 title: Python Integration
 excerpt: Example code for using Pixashot with Python using requests or aiohttp
 meta:
-    nav_order: 82
+  nav_order: 82
 ---
 
 # Python Integration

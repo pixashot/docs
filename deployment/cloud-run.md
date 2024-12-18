@@ -2,7 +2,7 @@
 title: Google Cloud Run Deployment
 excerpt: Comprehensive guide to deploying Pixashot on Google Cloud Run, including setup, configuration, monitoring, and production best practices.
 meta:
-    nav_order: 151
+  nav_order: 151
 ---
 
 # Google Cloud Run Deployment

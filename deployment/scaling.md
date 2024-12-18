@@ -2,7 +2,7 @@
 title: Performance and Scaling
 excerpt: Guidelines for scaling Pixashot deployments, including CPU and memory optimization, worker configuration, and performance tuning.
 meta:
-    nav_order: 154
+  nav_order: 154
 ---
 
 # Performance and Scaling

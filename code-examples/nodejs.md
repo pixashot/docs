@@ -2,7 +2,7 @@
 title: Node.js Integration
 excerpt: Example code for using Pixashot with Node.js using fetch or axios
 meta:
-    nav_order: 81
+  nav_order: 81
 ---
 
 # Node.js Integration

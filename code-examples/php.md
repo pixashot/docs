@@ -2,7 +2,7 @@
 title: PHP Integration
 excerpt: Example code for using Pixashot with PHP using Guzzle HTTP client
 meta:
-    nav_order: 83
+  nav_order: 83
 ---
 
 # PHP Integration

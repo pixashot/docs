@@ -2,7 +2,7 @@
 title: Common Use Cases
 excerpt: Overview of practical applications and implementation patterns for Pixashot across different industries and scenarios.
 meta:
-    nav_order: 70
+  nav_order: 70
 ---
 
 # Common Use Cases

@@ -2,7 +2,7 @@
 title: Azure Deployment Guide
 excerpt: Comprehensive guide to deploying Pixashot on Microsoft Azure, including setup, configuration, monitoring, and production best practices.
 meta:
-    nav_order: 152
+  nav_order: 152
 ---
 
 # Azure Deployment Guide

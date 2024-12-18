@@ -2,7 +2,7 @@
 title: Advanced Screenshot Options
 excerpt: Comprehensive guide to Pixashot's advanced capture features, including dark mode, geolocation, custom JavaScript, and complex interactions.
 meta:
-    nav_order: 52
+  nav_order: 52
 ---
 
 # Advanced Screenshot Options

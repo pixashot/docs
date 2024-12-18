@@ -2,7 +2,7 @@
 title: Code Examples
 excerpt: Example code for integrating Pixashot with various programming languages
 meta:
-    nav_order: 80
+  nav_order: 80
 ---
 
 # Client Library Examples

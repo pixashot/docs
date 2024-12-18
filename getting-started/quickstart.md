@@ -2,7 +2,7 @@
 title: Quick Start with Pixashot
 excerpt: Take your first screenshots and learn the basics of using Pixashot with practical examples.
 meta:
-    nav_order: 21
+  nav_order: 21
 ---
 
 # Quick Start Guide

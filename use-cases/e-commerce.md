@@ -2,7 +2,7 @@
 title: E-commerce Implementation Guide
 excerpt: Detailed guide for implementing Pixashot in e-commerce applications, including product image capture, catalog generation, and social media integration.
 meta:
-    nav_order: 131
+  nav_order: 131
 ---
 
 # E-commerce Implementation

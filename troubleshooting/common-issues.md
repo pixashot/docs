@@ -2,7 +2,7 @@
 title: Common Issues
 excerpt: Detailed solutions for frequently encountered problems when using Pixashot, including screenshots, timeouts, and resource issues.
 meta:
-    nav_order: 171
+  nav_order: 171
 ---
 
 # Common Issues and Solutions

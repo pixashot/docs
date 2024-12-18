@@ -2,7 +2,7 @@
 title: Getting Started with Pixashot
 excerpt: A comprehensive introduction to Pixashot, including system requirements, prerequisites, and initial setup guidance.
 meta:
-    nav_order: 20
+  nav_order: 20
 ---
 
 # Getting Started with Pixashot

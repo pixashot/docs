@@ -2,7 +2,7 @@
 title: Interaction System Overview
 excerpt: Understanding Pixashot's page interaction capabilities for capturing dynamic web content.
 meta:
-nav_order: 70
+  nav_order: 70
 ---
 
 # Interaction System

@@ -2,7 +2,7 @@
 title: Response Handling
 excerpt: Guide to handling Pixashot API responses, including success responses, error handling, and different response formats.
 meta:
-    nav_order: 93
+  nav_order: 93
 ---
 
 # Response Handling

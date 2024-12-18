@@ -2,7 +2,7 @@
 title: Pixashot Best Practices
 excerpt: Recommended practices for optimizing performance, reliability, and security when using Pixashot.
 meta:
-    nav_order: 24
+  nav_order: 24
 ---
 
 # Pixashot Best Practices

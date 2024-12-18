@@ -2,7 +2,7 @@
 title: Rate Limiting
 excerpt: Comprehensive guide to Pixashot's rate limiting system, including configuration, monitoring, and best practices for handling rate limits.
 meta:
-    nav_order: 94
+  nav_order: 94
 ---
 
 # Rate Limiting

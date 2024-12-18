@@ -2,7 +2,7 @@
 title: Resource Management
 excerpt: Comprehensive guide to how Pixashot manages memory, CPU, and browser resources for optimal performance and reliability.
 meta:
-    nav_order: 33
+  nav_order: 33
 ---
 
 # Resource Management

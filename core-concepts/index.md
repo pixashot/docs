@@ -2,7 +2,7 @@
 title: Pixashot Core Concepts
 excerpt: Comprehensive overview of Pixashot's architecture, browser context management, request processing, and system internals.
 meta:
-   nav_order: 30
+  nav_order: 30
 ---
 
 # Core Concepts
