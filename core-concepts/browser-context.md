@@ -19,7 +19,7 @@ graph TD
     B --> C1[Page 1]
     B --> C2[Page 2]
     B --> C3[Page 3]
-    subgraph "Shared Resources"
+    subgraph SharedResources
         D[Extensions]
         E[Network Settings]
         F[Cookie Handling]

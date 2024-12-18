@@ -17,26 +17,26 @@ The diagram below illustrates the major components and their interactions:
 
 ```mermaid
 graph TD
-    subgraph "Request Processing"
+    subgraph RequestProcessing
         A[Client Requests] --> B[Load Balancer]
         B --> C[Worker Processes]
     end
     
-    subgraph "Core Systems"
+    subgraph CoreSystems
         C --> D[Shared Browser Context]
         D --> E[Page Pool]
         D --> F[Extension System]
         D --> G[Network Layer]
     end
     
-    subgraph "Resource Management"
+    subgraph ResourceManagement
         E --> H[Memory Manager]
         F --> H
         G --> H
         H --> I[Cleanup System]
     end
     
-    subgraph "Output Processing"
+    subgraph OutputProcessing
         E --> J[Screenshot Capture]
         J --> K[Format Processing]
         K --> L[Response Delivery]
@@ -63,17 +63,16 @@ Unlike traditional screenshot services that often create a new browser instance 
 
 ```mermaid
 graph TD
-    subgraph "Traditional Architecture"
+    subgraph TraditionalArchitecture
         A1[Request 1] --> B1[Browser 1]
         A2[Request 2] --> B2[Browser 2]
         A3[Request 3] --> B3[Browser 3]
     end
     
-    subgraph "Pixashot Architecture"
+    subgraph PixashotArchitecture
         C1[Request 1] --> D[Shared Browser Context]
         C2[Request 2] --> D
         C3[Request 3] --> D
-    
         D --> E1[Page 1]
         D --> E2[Page 2]
         D --> E3[Page 3]
@@ -109,20 +108,19 @@ The following diagram illustrates how the core components interact during a typi
 
 ```mermaid
 graph TD
-    subgraph "Request Flow"
+    subgraph RequestFlow
         A[Request Handler] --> B[Context Manager]
         B --> C[Page Controller]
         C --> D[Capture Service]
     end
     
-    subgraph "Support Systems"
+    subgraph SupportSystems
         E[Extension Manager] --> B
         F[Resource Monitor] --> B
-    
         G[Network Controller] --> B
     end
     
-    subgraph "Processing"
+    subgraph Processing
         C --> H[Interaction System]
         C --> I[Content System]
         D --> J[Format Processor]
@@ -218,7 +216,6 @@ sequenceDiagram
     participant P as Page
     participant S as Screenshot
     participant R as Response
-
     C->>H: HTTP Request
     H->>H: Validate Request
     H->>B: Get Context
@@ -272,12 +269,10 @@ Pixashot implements several strategies to ensure efficient resource utilization:
 
 ```mermaid
 graph TD
-    subgraph "Memory Management"
+    subgraph MemoryManagement
         A[Memory Monitor] --> B{Memory Check}
-        
         B -->|OK| C[Continue]
-        B -->|High|
-        D[Cleanup]
+        B -->|High| D[Cleanup]
         D --> E[Recycle Workers]
         E --> F[Reset Context]
     end
@@ -317,14 +312,11 @@ Pixashot has a robust error-handling system to ensure graceful degradation and i
 
 ```mermaid
 graph TD
-    subgraph "Error Handling"
+    subgraph ErrorHandling
         A[Application Error] --> B{Error Type}
-        B -->|Request|
-        C[Request Handler]
-        B -->|Resource|
-        D[Resource Handler]
-        B -->|System|
-        E[System Handler]
+        B -->|Request| C[Request Handler]
+        B -->|Resource| D[Resource Handler]
+        B -->|System| E[System Handler]
         C --> F[Client Response]
         D --> G[Resource Recovery]
         E --> H[System Recovery]

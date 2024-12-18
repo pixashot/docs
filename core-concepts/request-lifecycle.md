@@ -24,7 +24,7 @@ sequenceDiagram
     participant R as Response Handler
 
     C->>V: HTTP Request
-    Note over V: Parameter Validation using<br>CaptureRequest model
+    Note over V: Parameter Validation using CaptureRequest model
     V->>A: Authentication Check
     A-->>V: Authentication Result
     V->>B: Request Page from Context
@@ -32,9 +32,9 @@ sequenceDiagram
     P->>P: Load Content (URL or HTML)
     P->>P: Execute Interactions (if any)
     P->>S: Capture Screenshot
-    S->>R: Format Response (e.g., to binary, JSON)
+    S->>R: Format Response (to binary, JSON)
     R->>C: HTTP Response (with data or error)
-````
+```
 
 ## 1\. Request Reception and Validation
 
