@@ -31,7 +31,7 @@ graph TD
 
 ## Implementation
 
-The context management is handled by the `ContextManager` class:
+The context management is handled by the `ContextManager` class, defined in [`context_manager.py`](https://github.com/pixashot/pixashot/blob/develop/src/context_manager.py):
 
 ```python
 class ContextManager:
@@ -45,7 +45,8 @@ class ContextManager:
 
 ### Context Initialization
 
-Context initialization occurs once during service startup:
+Context initialization occurs once during service startup. The `initialize` method in
+`ContextManager` sets up the browser with optimized arguments and any enabled extensions:
 
 ```python
 async def initialize(self, playwright):
@@ -76,7 +77,7 @@ async def initialize(self, playwright):
 
 ### Extension Management
 
-Extensions are loaded once and shared across all requests:
+Extensions are loaded once and shared across all requests. The `_get_extension_args` method determines which extensions to load based on environment variables:
 
 ```python
 def _get_extension_args(self):
@@ -102,6 +103,7 @@ def _get_extension_args(self):
 ### Resource Sharing
 
 Resources are efficiently shared across all requests:
+
 - Browser process
 - Network connections
 - Memory allocations
@@ -110,7 +112,7 @@ Resources are efficiently shared across all requests:
 
 ### Page Lifecycle
 
-Individual pages are created and destroyed for each request while maintaining the shared context:
+Individual pages are created and destroyed for each request while maintaining the shared context. The `capture_screenshot` method in `CaptureService` demonstrates this:
 
 ```python
 async def capture_screenshot(self, output_path, options):
@@ -129,28 +131,32 @@ async def capture_screenshot(self, output_path, options):
 ## Benefits
 
 ### Performance
-- **Faster Response Times**: No browser startup overhead
-- **Resource Efficiency**: Shared memory and CPU usage
-- **Connection Reuse**: Network connections are maintained
-- **Cache Utilization**: Browser cache is shared
+
+- **Faster Response Times**: No browser startup overhead for each request.
+- **Resource Efficiency**: Shared memory and CPU usage across requests.
+- **Connection Reuse**: Network connections are maintained and reused.
+- **Cache Utilization**: Browser cache is shared, improving load times for repeated assets.
 
 ### Reliability
-- **Consistent Behavior**: Same context for all requests
-- **Predictable Resource Usage**: Better memory management
-- **Stable Extensions**: Extensions remain loaded
-- **Error Isolation**: Page failures don't affect context
+
+- **Consistent Behavior**: All requests use the same browser context, ensuring consistent settings and behavior.
+- **Predictable Resource Usage**: Easier to manage and predict memory usage with a single browser instance.
+- **Stable Extensions
+  **: Extensions are loaded once and remain active, reducing initialization overhead and potential issues.
+- **Error Isolation**: While the context is shared, individual page failures do not affect the overall context.
 
 ### Scalability
-- **Lower Memory Footprint**: Single browser instance
-- **Efficient Resource Usage**: Shared context reduces overhead
-- **Better CPU Utilization**: No repeated browser initialization
-- **Optimized Network Usage**: Connection pooling
+
+- **Lower Memory Footprint**: A single browser instance consumes less memory than multiple instances.
+- **Efficient Resource Usage**: Shared context reduces overhead and improves resource utilization.
+- **Better CPU Utilization**: Reduces CPU load by eliminating repeated browser initializations.
+- **Optimized Network Usage**: Connection pooling optimizes network resource usage.
 
 ## Configuration Options
 
 ### Memory Management
 
-Configure worker processes and request limits:
+Worker processes and request limits can be configured via environment variables to optimize memory usage:
 
 ```bash
 # Environment variables
@@ -161,7 +167,7 @@ KEEP_ALIVE=300           # Keep-alive timeout in seconds
 
 ### Extension Control
 
-Enable or disable built-in extensions:
+Built-in extensions can be enabled or disabled via environment variables:
 
 ```bash
 # Extension configuration
@@ -171,7 +177,7 @@ USE_COOKIE_BLOCKER=true  # Enable cookie consent handling
 
 ### Network Settings
 
-Configure proxy and network behavior:
+Proxy settings can be configured to control network behavior:
 
 ```bash
 # Proxy configuration
@@ -185,53 +191,59 @@ PROXY_PASSWORD="pass"
 
 ### Security
 
-1. **Isolation**
-    - Pages are isolated from each other
-    - Resources are cleaned up after each request
-    - Authentication tokens aren't shared
+1. **Isolation**:
 
-2. **Resource Protection**
-    - Memory limits per page
-    - Timeout controls
-    - Automatic cleanup
+- Each page operates in isolation within the shared context.
+- Resources are cleaned up after each request to prevent data leakage.
+- Authentication tokens should not be shared or stored in a way that they persist across different users' requests.
+
+2. **Resource Protection**:
+
+- Memory limits are enforced at the container level (e.g., via Docker or Cloud Run settings).
+- Timeouts are used to prevent individual requests from consuming too many resources.
+- Automatic cleanup routines are in place to release resources.
 
 ### Limitations
 
-1. **Extension Configuration**
-    - Extensions are server-wide
-    - Can't change per request
-    - Must be set at startup
+1. **Extension Configuration**:
 
-2. **Resource Sharing**
-    - Memory is shared
-    - CPU is shared
-    - Network connections are shared
+- Extensions are configured globally for the server.
+- They cannot be changed per request.
+- Configuration must be set at startup.
+
+2. **Resource Sharing**:
+
+- While resources are shared efficiently, excessive usage by one request can potentially impact others.
+- Monitoring is crucial to ensure fair resource allocation.
 
 ### Best Practices
 
-1. **Resource Configuration**
+1. **Resource Configuration**:
+
    ```bash
    # Recommended settings for production
-   WORKERS=4              # Adjust based on CPU cores
-   MAX_REQUESTS=1000     # Prevent memory leaks
-   KEEP_ALIVE=300        # Balance between reuse and cleanup
+   WORKERS=4              # Adjust based on CPU cores and expected load
+   MAX_REQUESTS=1000     # Helps prevent memory leaks by recycling workers
+   KEEP_ALIVE=300        # Balance between connection reuse and cleanup
    ```
 
-2. **Memory Management**
-    - Monitor memory usage
-    - Set appropriate limits
-    - Implement cleanup routines
+2. **Memory Management**:
 
-3. **Extension Usage**
-    - Enable only needed extensions
-    - Monitor extension performance
-    - Update extensions regularly
+- Monitor memory usage through the `/health` endpoint.
+- Set appropriate memory limits for your deployment environment (e.g., Docker
+  `--memory` flag, Cloud Run memory settings).
+- Implement cleanup routines to release resources after each request.
+
+3. **Extension Usage**:
+
+- Enable only necessary extensions to minimize overhead.
+- Monitor the performance impact of each enabled extension.
 
 ## Monitoring
 
 ### Health Checks
 
-Monitor context health:
+Monitor context health using the provided endpoints:
 
 ```bash
 # Check health endpoint
@@ -244,34 +256,40 @@ curl http://your-instance/health/ready
 ### Resource Metrics
 
 Track important metrics:
+
 - Memory usage
 - CPU utilization
 - Request latency
 - Error rates
 
+These metrics can be monitored through the
+`/health` endpoint or by integrating with monitoring systems like Prometheus or Google Cloud Monitoring.
+
 ## Troubleshooting
 
 Common issues and solutions:
 
-1. **High Memory Usage**
-    - Check MAX_REQUESTS setting
-    - Monitor worker processes
-    - Review page cleanup
+1. **High Memory Usage**:
 
-2. **Context Errors**
-    - Check browser logs
-    - Verify extension status
-    - Monitor network connectivity
+- Check the `MAX_REQUESTS` setting to ensure workers are recycled.
+- Monitor memory usage and adjust `WORKERS` accordingly.
+- Review page cleanup logic in `capture_service.py` to ensure resources are released.
 
-3. **Performance Issues**
-    - Review worker configuration
-    - Check resource limits
-    - Monitor network conditions
+2. **Context Errors**:
+
+- Check browser logs for errors related to context initialization or extension loading.
+- Verify that environment variables related to extensions are correctly set.
+
+3. **Performance Issues**:
+
+- Review worker configuration and adjust based on load.
+- Check resource limits (CPU, memory) in your deployment environment.
+- Monitor network conditions and proxy settings if applicable.
 
 ## Next Steps
 
-- Learn about the [Request Lifecycle](request-lifecycle.md)
-- Understand [Resource Management](resource-management.md)
-- Explore [Performance Optimization](../deployment/scaling.md)
+- Learn about the [Request Lifecycle](request-lifecycle.md) to understand how requests are processed.
+- Understand [Resource Management](resource-management.md) for more details on memory and CPU optimization.
+- Explore [Performance Optimization](../deployment/scaling.md) for scaling your deployment.
 
-The single browser context architecture is fundamental to Pixashot's performance and reliability. Understanding its behavior and configuration options is crucial for optimal deployment and operation.
+The single browser context architecture is fundamental to Pixashot's performance and reliability. Understanding its behavior and configuration options is crucial for optimal deployment and operation. By leveraging this architecture, Pixashot provides efficient resource utilization, faster response times, and consistent capture behavior, making it a powerful solution for web screenshot needs.

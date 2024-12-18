@@ -7,7 +7,7 @@ meta:
 
 # Request Lifecycle
 
-This guide details how Pixashot processes screenshot requests, explaining each stage from initial receipt to final response. Understanding this lifecycle is crucial for debugging, optimization, and integration development.
+This guide details how Pixashot processes screenshot requests, explaining each stage from initial receipt to final response. Understanding this lifecycle is crucial for debugging, optimization, integration development, and contributing to the project.
 
 ## Overview
 
@@ -17,28 +17,30 @@ The request lifecycle consists of several distinct phases:
 sequenceDiagram
     participant C as Client
     participant V as Request Validation
+    participant A as Authentication
     participant B as Browser Context
     participant P as Page Processing
     participant S as Screenshot Capture
     participant R as Response Handler
 
     C->>V: HTTP Request
-    Note over V: Parameter Validation
-    Note over V: Authentication Check
-    V->>B: Create Page
-    B->>P: Configure Page
-    P->>P: Load Content
-    P->>P: Execute Interactions
+    Note over V: Parameter Validation using<br>CaptureRequest model
+    V->>A: Authentication Check
+    A-->>V: Authentication Result
+    V->>B: Request Page from Context
+    B->>P: Create & Configure Page
+    P->>P: Load Content (URL or HTML)
+    P->>P: Execute Interactions (if any)
     P->>S: Capture Screenshot
-    S->>R: Process Response
-    R->>C: Send Response
-```
+    S->>R: Format Response (e.g., to binary, JSON)
+    R->>C: HTTP Response (with data or error)
+````
 
-## 1. Request Reception and Validation
+## 1\. Request Reception and Validation
 
 ### Initial Validation
 
-Requests are first validated using Pydantic models:
+Requests are received and validated against the `CaptureRequest` model defined in [`capture_request.py`](https://github.com/pixashot/pixashot/blob/develop/src/capture_request.py). This model uses Pydantic to ensure type safety and data integrity:
 
 ```python
 class CaptureRequest(BaseModel):
@@ -48,7 +50,7 @@ class CaptureRequest(BaseModel):
     full_page: bool = False
     window_width: int = 1920
     window_height: int = 1080
-    # ... additional fields
+    # ... additional fields ...
 
     @model_validator(mode='before')
     def validate_url_or_html_content(cls, values):
@@ -61,7 +63,7 @@ class CaptureRequest(BaseModel):
 
 ### Authentication Check
 
-Each request undergoes authentication verification:
+Authentication is performed using the `verify_auth_token` function defined in [`request_auth.py`](https://github.com/pixashot/pixashot/blob/develop/src/request_auth.py). It checks for a valid `Authorization` header or verifies signed URLs:
 
 ```python
 def verify_auth_token(auth_header):
@@ -74,7 +76,7 @@ def verify_auth_token(auth_header):
 
 ### Template Application
 
-If a template is specified, it's applied to the request:
+If a `template` parameter is provided in the request, it's applied using the `apply_template` validator in the `CaptureRequest` model. Templates are defined in `templates.json` and loaded by `src/templates.py`:
 
 ```python
 @model_validator(mode='before')
@@ -89,28 +91,24 @@ def apply_template(cls, values):
     return values
 ```
 
-## 2. Browser Context Initialization
+## 2\. Browser Context and Page Handling
 
 ### Page Creation
 
-A new page is created within the shared browser context:
+A new page is created within the shared browser context. The `ContextManager` (defined in [`context_manager.py`](https://github.com/pixashot/pixashot/blob/develop/src/context_manager.py)) handles the creation and management of the browser context. The `CaptureService` requests a new page:
 
 ```python
 async def capture_screenshot(self, output_path, options):
     try:
         page = await self.context.new_page()
-        try:
-            await self._configure_page(page, options)
-            # ... capture logic ...
-        finally:
-            await page.close()
+        # ... rest of the capture logic ...
     except Exception as e:
         raise ScreenshotServiceException(str(e))
 ```
 
 ### Page Configuration
 
-The page is configured according to request parameters:
+The page is configured according to the request parameters. This includes setting the user agent, geolocation, and other page settings. This logic is primarily handled by `MainBrowserController`.
 
 ```python
 async def _configure_page(self, page: Page, options):
@@ -123,11 +121,11 @@ async def _configure_page(self, page: Page, options):
         await self.set_geolocation(page, options.geolocation)
 ```
 
-## 3. Content Loading
+## 3\. Content Loading
 
 ### URL Navigation
 
-For URL-based requests:
+For URL-based requests, Pixashot navigates to the specified URL with a timeout and retry mechanism:
 
 ```python
 async def _resilient_navigation(self, page: Page, url: str, timeout: int):
@@ -144,7 +142,7 @@ async def _resilient_navigation(self, page: Page, url: str, timeout: int):
 
 ### Content Preparation
 
-Page content is prepared based on options:
+The `MainBrowserController` class handles various page preparation steps, such as waiting for the network, applying dark mode, and executing custom JavaScript:
 
 ```python
 async def prepare_page(self, page: Page, options):
@@ -161,11 +159,11 @@ async def prepare_page(self, page: Page, options):
         await self.interaction_controller.wait_for_animations(page)
 ```
 
-## 4. Interaction Execution
+## 4\. Interaction Execution
 
 ### Page Interactions
 
-Structured interactions are executed in sequence:
+The `InteractionController` handles user interactions defined in the request. Supported actions include clicking, typing, hovering, scrolling, and waiting:
 
 ```python
 async def perform_interactions(self, page: Page, interactions: list):
@@ -173,75 +171,41 @@ async def perform_interactions(self, page: Page, interactions: list):
         try:
             if step.action == "click":
                 await self._click(page, step.selector)
-            elif step.action == "type":
-                await self._type(page, step.selector, step.text)
-            elif step.action == "hover":
-                await self._hover(page, step.selector)
-            elif step.action == "scroll":
-                await self._scroll(page, step.x, step.y)
-            elif step.action == "wait_for":
-                await self._handle_wait_for(page, step.wait_for)
+            # ... other interaction handling ...
         except Exception as e:
             raise InteractionException(f"Failed to perform {step.action}: {str(e)}")
 ```
 
 ### Wait Strategies
 
-Different wait strategies ensure content is ready:
+Different wait strategies are implemented to ensure that dynamic content is fully loaded before capture.
 
-```python
-async def wait_for_network_mostly_idle(self, page: Page, timeout: int, 
-                                     idle_threshold: int = 2,
-                                     check_interval: int = 100):
-    async def check_network_activity():
-        return await page.evaluate('''() => {
-            return {
-                pendingRequests: window.performance.getEntriesByType('resource')
-                    .filter(r => !r.responseEnd).length,
-                recentRequests: window.performance.getEntriesByType('resource')
-                    .filter(r => r.responseEnd > performance.now() - 1000).length
-            };
-        }''')
-```
+* **Network Idle:** `wait_for_network_idle`
+* **Mostly Idle:** `wait_for_network_mostly_idle` (defined in `InteractionController`)
+* **Selector:** `wait_for_selector`
+* **Timeout:** `wait_for_timeout`
 
-## 5. Screenshot Capture
+## 5\. Screenshot Capture
 
 ### Capture Preparation
 
-The page is prepared for capture:
+The `ScreenshotController` prepares the page for capture based on the requested options. It handles both full-page and viewport screenshots:
 
 ```python
 async def prepare_for_full_page_screenshot(self, page: Page, window_width: int):
-    try:
-        await page.evaluate('window.scrollTo(0, document.body.scrollHeight)')
-        full_height = await page.evaluate('document.body.scrollHeight')
-        full_height = min(full_height, self.MAX_VIEWPORT_HEIGHT)
-        
-        await page.set_viewport_size({
-            'width': window_width, 
-            'height': full_height
-        })
-        
-        await page.evaluate('window.scrollTo(0, 0)')
-        await page.wait_for_timeout(self.SCROLL_PAUSE_MS)
-    except Exception as e:
-        logger.error(f"Error in prepare_for_full_page_screenshot: {str(e)}")
+    # ... logic to prepare for full page capture ...
+
+async def prepare_for_viewport_screenshot(self, page: Page, window_width: int, window_height: int):
+    # ... logic to prepare for viewport capture ...
 ```
 
 ### Screenshot Taking
 
-The actual screenshot is captured:
+The actual screenshot is taken using Playwright's `page.screenshot()` method. Fallback mechanisms are implemented to handle potential timeouts or errors:
 
 ```python
 async def take_screenshot(self, page: Page, options: dict) -> bytes:
-    screenshot_options = {
-        'path': options.get('path'),
-        'full_page': options.get('full_page', False),
-        'type': options.get('format', 'png'),
-        'quality': options.get('quality'),
-        'omit_background': options.get('omit_background', False),
-        'timeout': self.SCREENSHOT_TIMEOUT_MS
-    }
+    # ... screenshot options ...
     
     try:
         return await self._take_screenshot_with_retry(page, screenshot_options)
@@ -250,11 +214,11 @@ async def take_screenshot(self, page: Page, options: dict) -> bytes:
         return await self._take_fallback_screenshot(page, screenshot_options)
 ```
 
-## 6. Response Processing
+## 6\. Response Processing
 
 ### Format Handling
 
-Responses are formatted according to request specifications:
+The captured screenshot is processed and returned in the requested format. Supported formats include PNG, JPEG, WebP, PDF, and HTML. The response can be formatted as raw binary data, base64 encoded, or an empty response with just a status code.
 
 ```python
 if options.response_type == 'empty':
@@ -274,7 +238,7 @@ else:  # by_format
 
 ### Resource Cleanup
 
-Resources are properly cleaned up after each request:
+After processing the request, resources such as temporary files and the page object are cleaned up.
 
 ```python
 try:
@@ -288,57 +252,35 @@ finally:
 
 ## Error Handling
 
-Errors are caught and handled at each stage:
+Errors are caught and handled at each stage of the request lifecycle. Detailed error information is logged and, optionally, returned in the response, especially in development mode:
 
 ```python
 @app.errorhandler(Exception)
 def handle_error(error):
-    error_response = {
-        'status': 'error',
-        'message': 'An unexpected error occurred while capturing.',
-        'timestamp': datetime.utcnow().isoformat()
-    }
-
-    if isinstance(error, ScreenshotServiceException):
-        error_response.update({
-            'error_type': error.__class__.__name__,
-            'error_details': str(error)
-        })
-
-    return jsonify(error_response), 500
+    # ... error handling logic ...
 ```
 
 ## Monitoring and Debugging
 
 ### Request Tracking
 
-Each request can be tracked through its lifecycle:
-
-```python
-logger.info('Capture request', extra={
-    'url': request.url,
-    'client_ip': request.remote_addr,
-    'user_agent': request.headers.get('User-Agent'),
-    'request_id': request.headers.get('X-Request-ID')
-})
-```
+Each request can be tracked through its lifecycle using logging statements. Key metrics and events are logged for debugging and monitoring.
 
 ### Performance Metrics
 
-Key metrics are recorded:
-- Request duration
-- Memory usage
-- Network activity
-- Error rates
+Performance metrics such as request duration, memory usage, and network activity are collected and can be monitored through the `/health` endpoint or integrated with external monitoring systems.
 
 ## Next Steps
 
-- Learn about [Resource Management](resource-management.md)
-- Explore [Advanced Features](../api-reference/request-options.md)
-- Understand [Error Handling](../troubleshooting/debugging.md)
+* Learn about [Resource Management](resource-management.md) for details on how Pixashot manages memory, CPU, and browser resources.
+* Explore [Advanced Features](../api-reference/request-options.md) to understand the full range of capture options.
+* Understand [Error Handling](../troubleshooting/debugging.md) for troubleshooting and debugging techniques.
+* Deep Dive into [Browser Context Details](browser-context.md) for greater understanding of how the browser context is managed.
 
 Understanding the request lifecycle is crucial for:
-- Debugging issues
-- Optimizing performance
-- Implementing integrations
-- Monitoring and logging
+
+* **Debugging issues**: Identifying bottlenecks or failures in the capture process.
+* **Optimizing performance**: Fine-tuning capture options and resource usage.
+* **Implementing integrations**: Building custom integrations and client libraries.
+* **Monitoring and logging**: Tracking key metrics for operational insight.
+* **Contributing to the project**: Understanding the flow for extending and improving Pixashot.
